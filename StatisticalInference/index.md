@@ -98,7 +98,7 @@ sd(apply(m, 1, mean)) # for each row calculate the mean and calculate the SD of 
 ```
 
 ```
-## [1] 0.3225515
+## [1] 0.3204657
 ```
 
 i.e. means of standard normals have $\sigma^2 = 1/\sqrt{n}$, we should get a value that is close enough below
@@ -124,7 +124,7 @@ sd(apply(m, 1, mean))
 ```
 
 ```
-## [1] 0.08953688
+## [1] 0.08857292
 ```
 
 i.e. means of standard uniforms have $\sigma^2 = 1/\sqrt{12n}$, we should get a value that is close enough below
@@ -150,7 +150,7 @@ sd(apply(m, 1, mean))
 ```
 
 ```
-## [1] 0.63724
+## [1] 0.6303573
 ```
 
 i.e. means of Poisson 4 distributions $\sigma^2 = 2/\sqrt{n}$, we should get a value that is close enough below
@@ -176,7 +176,7 @@ sd(apply(m, 1, mean))
 ```
 
 ```
-## [1] 0.1636654
+## [1] 0.1569527
 ```
 
 i.e. means of coin flips have $\sigma^2 = 1/{2\sqrt{n}}$, we should get a value that is close enough below

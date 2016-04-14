@@ -5,6 +5,8 @@ date: "April 2, 2016"
 output: 
     html_document:
         keep_md: true
+        toc: true
+        theme: united
 ---
 
 ## Probability Density Functions
