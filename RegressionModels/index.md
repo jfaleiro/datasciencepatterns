@@ -1474,7 +1474,7 @@ sum(ey * ex1) / sum(ex1 ^ 2)
 ```
 
 ```
-## [1] 1.006773
+## [1] 1.016098
 ```
 
 Same as:
@@ -1486,7 +1486,7 @@ coef(lm(ey ~ ex1 - 1))
 
 ```
 ##      ex1 
-## 1.006773
+## 1.016098
 ```
 
 And should be the same if you add all regressors, looking under column x1:
@@ -1498,7 +1498,7 @@ coef(lm(y ~ x1 + x2 + x3))
 
 ```
 ## (Intercept)          x1          x2          x3 
-##   0.9962623   1.0067733   0.9900412   0.9978590
+##   0.9800510   1.0160979   0.9987278   1.0098213
 ```
 
 ## Sample Analysys: Swiss Population Late 1800
@@ -2397,7 +2397,7 @@ round(dfbetas(fit)[1:10, 2], 3)
 
 ```
 ##      1      2      3      4      5      6      7      8      9     10 
-##  8.817 -0.090  0.064 -0.285 -0.072  0.009  0.020 -0.004  0.008 -0.051
+##  7.956  0.003 -0.045 -0.219 -0.018 -0.011 -0.022 -0.047 -0.017 -0.197
 ```
 
 Measurement of the first point is orders of magnitude higher than other points.
@@ -2411,7 +2411,7 @@ round(hatvalues(fit)[1:10], 3)
 
 ```
 ##     1     2     3     4     5     6     7     8     9    10 
-## 0.509 0.017 0.014 0.033 0.012 0.011 0.015 0.011 0.010 0.011
+## 0.507 0.010 0.013 0.031 0.012 0.013 0.019 0.018 0.010 0.038
 ```
 
 Measurement of the first point is higher than other points.
@@ -2438,7 +2438,7 @@ round(dfbetas(fit2)[1 : 10, 2], 3)
 
 ```
 ##      1      2      3      4      5      6      7      8      9     10 
-##  0.402  0.045  0.037 -0.051 -0.079  0.000  0.035  0.097 -0.153 -0.006
+## -0.263  0.024 -0.036  0.007 -0.017 -0.018  0.287  0.130 -0.072 -0.013
 ```
 
 Still large, but not as much as others
@@ -2450,7 +2450,7 @@ round(hatvalues(fit2)[1 : 10], 3)
 
 ```
 ##     1     2     3     4     5     6     7     8     9    10 
-## 0.217 0.013 0.018 0.020 0.037 0.011 0.014 0.028 0.019 0.011
+## 0.216 0.018 0.012 0.011 0.010 0.011 0.053 0.015 0.024 0.017
 ```
 
 Hat value of the first observation is much larger than before.
@@ -2506,7 +2506,7 @@ Answering the question: How do we chose what variables to include in a regressio
 
 ## Simulating Impact of New Regressors in $R^2$
 
-Also known as variance inflation. 
+Also known as variance inflation, adding variables to the model and increasing actual standard errors for all the other regressors.
 
 Here is a simulation of adding a number of uncorrelated regressors:
 
@@ -2553,7 +2553,7 @@ round(apply(betas, 1, sd), 5)
 
 In this case the standard deviation increased by a lot.
 
-On other words: **if we omit regressors we get biased, if we include unnecessary regressors we increase the standards error.**
+On other words: **if we omit regressors we get biased (_underfitting_), if we include unnecessary regressors we increase the standard error (_overfitting_).**
 
 ### Variance Inflation Factor (VIF)
 
@@ -2589,6 +2589,8 @@ vif(fit)
 
 Means that agriculture for example has 2 times impact in error in comparison if it was a purely random regressor. Infant.Mortality (low, approx 1) is uncorrelated to any of the other regressors.
 
+Also, `vif` is the variation inflation, and the square of standard error inflation:
+
 
 ```r
 sqrt(vif(fit)) #I prefer sd 
@@ -2600,6 +2602,21 @@ sqrt(vif(fit)) #I prefer sd
 ## Infant.Mortality 
 ##         1.052398
 ```
+
+You can remove regressors using a `-` sign:
+
+
+```r
+fit2 <- lm(Fertility ~ . -Examination, data = swiss)
+vif(fit2)
+```
+
+```
+##      Agriculture        Education         Catholic Infant.Mortality 
+##         2.147153         1.816361         1.299916         1.107528
+```
+
+Omitting Examination has markedly decreased the VIF for Education, effect of how correlated these were.
 
 ### Nested Models
 
@@ -2629,3 +2646,503 @@ anova(fit1, fit3, fit5)
 ```
 
 This gives a list of the three models and a number of columns. The F statistic tests the predictive capability of the model as a whole - the larger the F value the better your model is at predicting the dependent variable. Lower F values indicate the model is not as good at predicting the dependent variable.
+
+Three asterisks (***) at the lower right of the printed table indicate that the null hypothesis is rejected at the 0.001 level, so at least one of the two additional regressors is significant. Rejection is based on a right-tailed F test, Pr(>F), applied to an F value.
+
+F values are calculated the following way:
+
+
+```r
+samples <- 47 # samples in swiss
+fit1Predictors <- 1 + 1 # 1 predictor + the intercept
+fit3Predictors <- 3 + 1 # 3 predictors + the intercept
+(deviance(fit3)/(samples - fit3Predictors)) / ((deviance(fit1)-deviance(fit3))/(fit3Predictors-fit1Predictors))
+```
+
+```
+## [1] 0.0476921
+```
+
+# GLM
+
+Generalized Linear Models are defined on three components
+
+* Exponential family model for the response
+* Systematic component via linear predictor
+* Link function, connecting means of the response to the linear predictor
+
+They are divided in three groups of regressions:
+
+* Linear model
+* Logistic regression (Bernoulli)
+* Poisson regression
+
+We will look at logistic and poisson regressions only.
+
+## Logistic Regressions
+
+A peak at the logistic curve:
+
+$f(x) = \frac {e^{\beta_0 + \beta_1 x}}{1 + e^{\beta_0 + \beta_1 x}}$:
+
+
+
+```r
+beta0 <- 0
+beta1 <- 2
+x <- seq(-10, 10, length=1000)
+y <- exp(beta0 + beta1 * x) / (1 + exp(beta0 + beta1 * x))
+plot(x, y, type='l', lwd=3, frame=FALSE)
+```
+
+![](index_files/figure-html/unnamed-chunk-157-1.png)
+
+As an example, we are going to look at to which extent the Baltimore Ravens score defines a win.
+
+
+```r
+download.file("https://dl.dropboxusercontent.com/u/7710864/data/ravensData.rda"
+              , destfile="ravensData.rda",method="curl")
+load("ravensData.rda")
+head(ravensData)
+```
+
+```
+##   ravenWinNum ravenWin ravenScore opponentScore
+## 1           1        W         24             9
+## 2           1        W         38            35
+## 3           1        W         28            13
+## 4           1        W         34            31
+## 5           1        W         44            13
+## 6           0        L         23            24
+```
+
+Should we fit a linear regression model in binary regressors?
+
+
+```r
+lmRavens <- lm(ravensData$ravenWinNum ~ ravensData$ravenScore)
+summary(lmRavens)$coef
+```
+
+```
+##                         Estimate  Std. Error  t value   Pr(>|t|)
+## (Intercept)           0.28503172 0.256643165 1.110615 0.28135043
+## ravensData$ravenScore 0.01589917 0.009058997 1.755069 0.09625261
+```
+
+Not usually, you can at a first shot, but you can get to negative probabilities or close to 1 slopes.
+
+Logistic regression on Ravens data:
+
+
+```r
+logLmRavens <- glm(ravensData$ravenWinNum ~ ravensData$ravenScore, family='binomial') # binomial equiv logistic
+summary(logLmRavens)
+```
+
+```
+## 
+## Call:
+## glm(formula = ravensData$ravenWinNum ~ ravensData$ravenScore, 
+##     family = "binomial")
+## 
+## Deviance Residuals: 
+##     Min       1Q   Median       3Q      Max  
+## -1.7575  -1.0999   0.5305   0.8060   1.4947  
+## 
+## Coefficients:
+##                       Estimate Std. Error z value Pr(>|z|)
+## (Intercept)           -1.68001    1.55412  -1.081     0.28
+## ravensData$ravenScore  0.10658    0.06674   1.597     0.11
+## 
+## (Dispersion parameter for binomial family taken to be 1)
+## 
+##     Null deviance: 24.435  on 19  degrees of freedom
+## Residual deviance: 20.895  on 18  degrees of freedom
+## AIC: 24.895
+## 
+## Number of Fisher Scoring iterations: 5
+```
+
+
+```r
+plot(ravensData$ravenScore, logLmRavens$fitted, pch=19, col='blue', xlab='score', ylab='probability ravens win')
+```
+
+![](index_files/figure-html/unnamed-chunk-160-1.png)
+
+If you look closer, this shows a segment of the logistic curve shown earlier.
+
+Odds ratio:
+
+
+```r
+exp(logLmRavens$coeff)
+```
+
+```
+##           (Intercept) ravensData$ravenScore 
+##             0.1863724             1.1124694
+```
+
+This basically says we will increase the probablity of win by **11.25%** for every extra point scored.
+
+
+```r
+exp(confint(logLmRavens))
+```
+
+```
+## Waiting for profiling to be done...
+```
+
+```
+##                             2.5 %   97.5 %
+## (Intercept)           0.005674966 3.106384
+## ravensData$ravenScore 0.996229662 1.303304
+```
+
+The 2.5% - 97.5% interval includes one, so the coeficients above are not significant.
+
+Applying ANOVA to this logistic regression:
+
+
+```r
+anova(logLmRavens, test='Chisq')
+```
+
+```
+## Analysis of Deviance Table
+## 
+## Model: binomial, link: logit
+## 
+## Response: ravensData$ravenWinNum
+## 
+## Terms added sequentially (first to last)
+## 
+## 
+##                       Df Deviance Resid. Df Resid. Dev Pr(>Chi)  
+## NULL                                     19     24.435           
+## ravensData$ravenScore  1   3.5398        18     20.895  0.05991 .
+## ---
+## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+```
+
+Using the shuttle dataset, what are the estimated odds for autlander use comparing headwinds to tailwinds?
+
+
+```r
+data(shuttle)
+shuttle$auto <- as.integer(shuttle$use == 'auto')
+fit <- glm(auto ~ wind - 1, data=shuttle, family='binomial')
+summary(fit)$coef
+```
+
+```
+##           Estimate Std. Error  z value  Pr(>|z|)
+## windhead 0.2513144  0.1781742 1.410499 0.1583925
+## windtail 0.2831263  0.1785510 1.585689 0.1128099
+```
+
+exp() of coeficients
+
+
+```r
+exp(coef(fit))
+```
+
+```
+## windhead windtail 
+## 1.285714 1.327273
+```
+
+So, estimated odds = exp(head) / exp(tail), from table above:
+
+
+```r
+1.285714 / 1.327273
+```
+
+```
+## [1] 0.9686884
+```
+
+Or programatically:
+
+
+```r
+exp(coef(fit))[1]/exp(coef(fit))[2]
+```
+
+```
+##  windhead 
+## 0.9686888
+```
+
+Are the estimated odds.
+
+Now, what are the estimated odds if we adjust for wind strenght (`magn`)?
+
+
+```r
+fitWind <- glm(auto ~ wind + magn - 1, data=shuttle, family='binomial')
+summary(fitWind)$coef
+```
+
+```
+##                 Estimate Std. Error       z value  Pr(>|z|)
+## windhead    3.635093e-01  0.2840608  1.279688e+00 0.2006547
+## windtail    3.955180e-01  0.2843987  1.390717e+00 0.1643114
+## magnMedium -1.009525e-15  0.3599481 -2.804642e-15 1.0000000
+## magnOut    -3.795136e-01  0.3567709 -1.063746e+00 0.2874438
+## magnStrong -6.441258e-02  0.3589560 -1.794442e-01 0.8575889
+```
+
+
+```r
+exp(coef(fitWind))[1]/exp(coef(fitWind))[2]
+```
+
+```
+##  windhead 
+## 0.9684981
+```
+
+Are the estimated odds, adjusted for wind strength. About the same as before.
+
+What happens if we fit a logistic regression model to a binary variable, then fit a logistic regression model for one minus the outcome what happens to the coefficients?
+
+
+```r
+summary(glm(1 - auto ~ wind - 1, data=shuttle, family=binomial))$coef
+```
+
+```
+##            Estimate Std. Error   z value  Pr(>|z|)
+## windhead -0.2513144  0.1781742 -1.410499 0.1583925
+## windtail -0.2831263  0.1785510 -1.585689 0.1128099
+```
+
+
+```r
+summary(glm(auto ~ wind - 1, data=shuttle, family=binomial))$coef
+```
+
+```
+##           Estimate Std. Error  z value  Pr(>|z|)
+## windhead 0.2513144  0.1781742 1.410499 0.1583925
+## windtail 0.2831263  0.1785510 1.585689 0.1128099
+```
+
+The coefficients reverse signs.
+
+## Poisson Regressions
+
+Poisson regressions tend to look like normal distributions as the value of $\lambda$ gets large:
+
+
+```r
+par(mfrow = c(1,3))
+plot(0:10, dpois(0:10, lambda=2), type='h', frame=F)
+plot(0:20, dpois(0:20, lambda=10), type='h', frame=F)
+plot(0:200, dpois(0:200, lambda=100), type='h', frame=F)
+```
+
+![](index_files/figure-html/unnamed-chunk-172-1.png)
+
+### Web Traffic
+
+Taking a peek at a web site hit count:
+
+
+```r
+download.file("https://dl.dropboxusercontent.com/u/7710864/data/gaData.rda",destfile="gaData.rda",method="curl")
+load("gaData.rda")
+```
+
+Let's convert date to julian (an integer count of days from past date)
+
+
+```r
+gaData$julian <- julian(gaData$date)
+head(gaData)
+```
+
+```
+##         date visits simplystats julian
+## 1 2011-01-01      0           0  14975
+## 2 2011-01-02      0           0  14976
+## 3 2011-01-03      0           0  14977
+## 4 2011-01-04      0           0  14978
+## 5 2011-01-05      0           0  14979
+## 6 2011-01-06      0           0  14980
+```
+
+Plotting and inserting a linear regression line.
+
+
+```r
+plot(gaData$julian,gaData$visits,pch=19,col="darkgrey",xlab="Julian",ylab="Visits")
+lm1 <- lm(gaData$visits ~ gaData$julian)
+glm1 <- glm(gaData$visits ~ gaData$julian,family="poisson")
+abline(lm1,col="red",lwd=1)
+lines(gaData$julian,glm1$fitted,col="blue",lwd=3)
+```
+
+![](index_files/figure-html/unnamed-chunk-174-1.png)
+
+In red a simple linear regression, in blue a poisson GLM regression.
+
+You can see they almost overlap, for these data points is not much of a difference.
+
+
+
+```r
+round(exp(coef(lm(I(log(gaData$visits + 1)) ~ gaData$julian))), 5)
+```
+
+```
+##   (Intercept) gaData$julian 
+##       0.00000       1.00231
+```
+
+So the model is estimating a 0.2% increase in web traffic per day.
+
+### Insect Spray Efficacy Comparison
+
+Consider the InsectSprays dataset. What is the estimated relative rate comparing spray A to spray B?
+
+
+```r
+data("InsectSprays")
+fit <- glm(count ~ factor(spray) -1, data=InsectSprays, family=poisson)
+summary(fit)$coef
+```
+
+```
+##                 Estimate Std. Error   z value      Pr(>|z|)
+## factor(spray)A 2.6741486 0.07580980 35.274443 1.448048e-272
+## factor(spray)B 2.7300291 0.07372098 37.031917 3.510670e-300
+## factor(spray)C 0.7339692 0.19999987  3.669848  2.426946e-04
+## factor(spray)D 1.5926308 0.13018891 12.233229  2.065604e-34
+## factor(spray)E 1.2527630 0.15430335  8.118832  4.706917e-16
+## factor(spray)F 2.8134107 0.07071068 39.787636  0.000000e+00
+```
+
+
+```r
+exp(coef(fit))
+```
+
+```
+## factor(spray)A factor(spray)B factor(spray)C factor(spray)D factor(spray)E 
+##      14.500000      15.333333       2.083333       4.916667       3.500000 
+## factor(spray)F 
+##      16.666667
+```
+
+
+```r
+exp(coef(fit))[1]/exp(coef(fit))[2]
+```
+
+```
+## factor(spray)A 
+##      0.9456522
+```
+
+# Splines
+
+How to fit pretty complicated curves in linear regressions? We do that through `splines`
+
+Consider the model 
+
+$$ Y_i = \beta_0 + \beta_1 X_i + \sum_{k=1}^d (x_i - \xi_k)_+ \gamma_k + \epsilon{i} $$ where $(a)_+ = a$ if $a > 0$ and $0$ otherwise and $\xi_1 \leq ... \leq \xi_d$ are known knot points
+
+
+
+```r
+n <- 500; x <- seq(0, 4 * pi, length = n); 
+y <- sin(x) + rnorm(n, sd = .3)
+knots <- seq(0, 8 * pi, length = 20); 
+splineTerms <- sapply(knots, function(knot) (x > knot) * (x - knot))
+xMat <- cbind(1, x, splineTerms)
+yhat <- predict(lm(y ~ xMat - 1))
+plot(x, y, frame = FALSE, pch = 21, bg = "lightblue", cex = 2)
+lines(x, yhat, col = "red", lwd = 2)
+```
+
+![](index_files/figure-html/unnamed-chunk-179-1.png)
+
+One issue, the knot points are too edgy.
+
+The solution is to square the difference in the knot points, so the model becomes
+
+$$ Y_i = \beta_0 + \beta_1 X_i + \beta_2 X_i^2 + \sum_{k=1}^d {(x_i - \xi_k)_+}^2 \gamma_k + \epsilon{i} $$
+
+
+
+```r
+splineTerms <- sapply(knots, function(knot) (x > knot) * (x - knot)^2) # (x - knot)^2
+xMat <- cbind(1, x, x^2, splineTerms) # x^2
+yhat <- predict(lm(y ~ xMat - 1))
+plot(x, y, frame = FALSE, pch = 21, bg = "lightblue", cex = 2)
+lines(x, yhat, col = "red", lwd = 2)
+```
+
+![](index_files/figure-html/unnamed-chunk-180-1.png)
+
+Better.
+
+# Detecting Sound Harmonics
+
+How to detect sound harmonics in a number of data points representing sound? First generating notes and chords: 
+
+
+```r
+##Chord finder, playing the white keys on a piano from octave c4 - c5
+notes4 <- c(261.63, 293.66, 329.63, 349.23, 392.00, 440.00, 493.88, 523.25)
+t <- seq(0, 2, by = .001); n <- length(t)
+# enconded chords
+c4 <- sin(2 * pi * notes4[1] * t); 
+e4 <- sin(2 * pi * notes4[3] * t); 
+g4 <- sin(2 * pi * notes4[5] * t)
+chord <- c4 + e4 + g4 + rnorm(n, 0, 0.3)
+```
+
+Let's generate a linear fit with an outcome `chord` and sound `x` as the regressor. 
+
+
+```r
+x <- sapply(notes4, function(freq) sin(2 * pi * freq * t))
+fit <- lm(chord ~ x - 1)
+```
+
+Now plotting, just the 
+
+```r
+plot(c(0, 9), c(0, 1.5), xlab = "Note", ylab = "Coef^2", axes = FALSE, frame = TRUE, type = "n")
+axis(2)
+axis(1, at = 1 : 8, labels = c("c4", "d4", "e4", "f4", "g4", "a4", "b4", "c5"))
+for (i in 1 : 8) 
+    abline(v = i, lwd = 3, col = grey(.8))
+# x is the note, y os coef(fit)^2
+lines(c(0, 1 : 8, 9), c(0, coef(fit)^2, 0), type = "l", lwd = 3, col = "red")
+```
+
+![](index_files/figure-html/unnamed-chunk-183-1.png)
+
+We can see c4, e4 and g4 are detected as the encoded chords:
+
+Now, how do we really do that: using a fast fourier transform.
+
+
+```r
+a <- fft(chord); 
+plot(Re(a)^2, type = "l")
+```
+
+![](index_files/figure-html/unnamed-chunk-184-1.png)
+
+The frequency is the representation of c4, e4 and g4 originally encoded.
