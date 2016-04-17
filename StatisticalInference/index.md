@@ -98,7 +98,7 @@ sd(apply(m, 1, mean)) # for each row calculate the mean and calculate the SD of 
 ```
 
 ```
-## [1] 0.3204657
+## [1] 0.3040809
 ```
 
 i.e. means of standard normals have $\sigma^2 = 1/\sqrt{n}$, we should get a value that is close enough below
@@ -124,7 +124,7 @@ sd(apply(m, 1, mean))
 ```
 
 ```
-## [1] 0.08857292
+## [1] 0.09064566
 ```
 
 i.e. means of standard uniforms have $\sigma^2 = 1/\sqrt{12n}$, we should get a value that is close enough below
@@ -150,7 +150,7 @@ sd(apply(m, 1, mean))
 ```
 
 ```
-## [1] 0.6303573
+## [1] 0.6119414
 ```
 
 i.e. means of Poisson 4 distributions $\sigma^2 = 2/\sqrt{n}$, we should get a value that is close enough below
@@ -176,7 +176,7 @@ sd(apply(m, 1, mean))
 ```
 
 ```
-## [1] 0.1569527
+## [1] 0.1572118
 ```
 
 i.e. means of coin flips have $\sigma^2 = 1/{2\sqrt{n}}$, we should get a value that is close enough below
@@ -1114,3 +1114,222 @@ ppois(leftSideEvents, t * lambda, lower.tail=FALSE)
 ```
 
 So, the probability of that infection rate be attributed to chance is only 3.18% - so chance can be safely ruled out and this hospital should implement some quality control procedures.
+
+# Power
+
+## Definition 
+
+$Power = 1 - \beta$ where $\beta$ is the probability of a type II error. The more power the better (error is a bad thing).
+
+Example: $\mu_a = 32$, $\mu_0 = 30$, $n = 16$, $\sigma = 4$
+
+
+```r
+alpha <- 0.05
+mu0 <- 30
+mua <- 32
+sigma <- 4
+n <- 16
+z <- qnorm(1 - alpha)
+pnorm(mu0 + z * sigma/sqrt(n), mean=mu0, sd=sigma/sqrt(n), lower.tail = FALSE)
+```
+
+```
+## [1] 0.05
+```
+
+I.e., there is a 5% probability of getting a mean of $\mu_0 = 30$ if we conduct this experiment
+
+
+```r
+pnorm(mu0 + z * sigma/sqrt(n), mean=mua, sd=sigma/sqrt(n), lower.tail = FALSE)
+```
+
+```
+## [1] 0.63876
+```
+
+I.e., there us a 64% probability of getting a mean of $\mu_a = 32$ if we conduct this experiment
+
+## Testing 
+
+
+Since $Power = \sqrt{n} \frac {(\mu_a - \mu_0)}{\sigma}$
+
+`power.t.test` calculates what is missing given what you provide.
+
+As long as you keep the ratio $\frac {(\mu_a - \mu_0)}{\sigma}$ (called effect size) the same, the value of $Power$ does not change:
+
+
+
+```r
+power.t.test(n=16, delta=2, sd=4, type='one.sample', alt='one.sided')$power
+```
+
+```
+## [1] 0.6040329
+```
+
+
+```r
+power.t.test(n=16, delta=2/4, sd=1, type='one.sample', alt='one.sided')$power
+```
+
+```
+## [1] 0.6040329
+```
+
+
+```r
+power.t.test(n=16, delta=100, sd=200, type='one.sample', alt='one.sided')$power
+```
+
+```
+## [1] 0.6040329
+```
+
+All 60.4%
+
+Calculating $n$ if you have power:
+
+
+```r
+power.t.test(power=0.8, delta=2, sd=4, type='one.sample', alt='one.sided')$n
+```
+
+```
+## [1] 26.13751
+```
+
+
+```r
+power.t.test(power=0.8,  delta=2/4, sd=1, type='one.sample', alt='one.sided')$n
+```
+
+```
+## [1] 26.13751
+```
+
+
+```r
+power.t.test(power=0.8, delta=100, sd=200, type='one.sample', alt='one.sided')$n
+```
+
+```
+## [1] 26.13751
+```
+
+All 60.4%
+
+# Multiple Comparisons
+
+[Green Jelly Beans Cause Acne!](https://xkcd.com/882/)
+
+## Adjusting p-values
+
+After you adjust them, cannot be used as regular p-values for hypothesis testing
+
+### Case study I: no true positives
+
+
+```r
+set.seed(1010093)
+pValues <- rep(NA, 1000)
+for(i in 1:1000) {
+    y <- rnorm(20)
+    x <- rnorm(20)
+    pValues[i] <- summary(lm(y ~ x))$coef[2,4]
+}
+sum(pValues < 0.05)
+```
+
+```
+## [1] 51
+```
+
+Controlling FWER (family wide error rate):
+
+
+```r
+sum(p.adjust(pValues, method='bonferroni') < 0.05)
+```
+
+```
+## [1] 0
+```
+
+Controlling FDR (false positive rate), Benjamini–Hochberg correction (BH)
+
+
+```r
+sum(p.adjust(pValues, method='BH') < 0.05)
+```
+
+```
+## [1] 0
+```
+
+### Case study II: 50% true positives
+
+
+```r
+set.seed(1010093)
+pValues <- rep(NA, 1000)
+for(i in 1:1000) {
+    x <- rnorm(20)
+    if (i <= 500) {
+        y <- rnorm(20)
+    } else {
+        y <- rnorm(20, mean=2*x)
+    }
+    pValues[i] <- summary(lm(y ~ x))$coef[2,4]
+}
+trueStatus <- rep(c('zero', 'not zero'), each=500)
+table(pValues < 0.05, trueStatus)
+```
+
+```
+##        trueStatus
+##         not zero zero
+##   FALSE        0  476
+##   TRUE       500   24
+```
+
+Controlling FWER (family wide error rate):
+
+
+```r
+table(p.adjust(pValues, method='bonferroni') < 0.05, trueStatus)
+```
+
+```
+##        trueStatus
+##         not zero zero
+##   FALSE       23  500
+##   TRUE       477    0
+```
+
+Controlling FDR (false positive rate), Benjamini–Hochberg correction (BH)
+
+
+```r
+table(p.adjust(pValues, method='BH') < 0.05, trueStatus)
+```
+
+```
+##        trueStatus
+##         not zero zero
+##   FALSE        0  487
+##   TRUE       500   13
+```
+
+P-values versus adjusted p-values
+
+
+```r
+par(mfrow=c(1,2))
+plot(pValues, p.adjust(pValues, method='bonferroni'), pch=19)
+plot(pValues, p.adjust(pValues, method='BH'), pch=19)
+```
+
+![](index_files/figure-html/unnamed-chunk-86-1.png)
