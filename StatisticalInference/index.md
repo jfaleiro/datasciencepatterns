@@ -1,6 +1,6 @@
 # Patterns for Statistical Inference
 J Faleiro  
-April 2, 2016  
+April 2, 2015  
 
 ## Probability Density Functions
 
@@ -98,7 +98,7 @@ sd(apply(m, 1, mean)) # for each row calculate the mean and calculate the SD of 
 ```
 
 ```
-## [1] 0.3040809
+## [1] 0.3209524
 ```
 
 i.e. means of standard normals have $\sigma^2 = 1/\sqrt{n}$, we should get a value that is close enough below
@@ -124,7 +124,7 @@ sd(apply(m, 1, mean))
 ```
 
 ```
-## [1] 0.09064566
+## [1] 0.09051182
 ```
 
 i.e. means of standard uniforms have $\sigma^2 = 1/\sqrt{12n}$, we should get a value that is close enough below
@@ -150,7 +150,7 @@ sd(apply(m, 1, mean))
 ```
 
 ```
-## [1] 0.6119414
+## [1] 0.673837
 ```
 
 i.e. means of Poisson 4 distributions $\sigma^2 = 2/\sqrt{n}$, we should get a value that is close enough below
@@ -176,7 +176,7 @@ sd(apply(m, 1, mean))
 ```
 
 ```
-## [1] 0.1572118
+## [1] 0.1636958
 ```
 
 i.e. means of coin flips have $\sigma^2 = 1/{2\sqrt{n}}$, we should get a value that is close enough below
@@ -226,7 +226,7 @@ round(c(var(x), var(x)/n, sd(x), sd(x)/sqrt(n)),2) # get some numbers, round the
 ## [1] 7.92 0.01 2.81 0.09
 ```
 
-### Distributions
+## Distributions
 
 #### Binomial Trials
 
@@ -381,7 +381,7 @@ ppois(2, lambda=500*0.01)
 ## [1] 0.124652
 ```
 
-### Asymptotics
+## Asymptotics
 
 #### Law of Large Numbers (LLN) in Action
 
@@ -479,6 +479,25 @@ binom.test(56, 100)$conf.int # 56 successes out of 100 trials
 ## [1] 0.95
 ```
 
+Another example: A sample of 9 people have a sample average brain volume of 1100cc and sd of 30cc. What is the complete set of values of $\mu_0$ that a test of $H_0 : \mu = \mu_0$ would fail to reject the null hypothesis in a two sided 5% Students t-test?
+
+
+```r
+n <- 9
+mu <- 1100
+sigma <- 30
+quantile <- 0.975 # 95%, i.e. 2.5% on each side of the curve, so right-side tail: 100% - 2.5% = 97.5%
+mu + c(-1, 1) * qt(quantile, df=n-1) * sigma/sqrt(n)
+```
+
+```
+## [1] 1076.94 1123.06
+```
+
+Another example: some measurement of 9 subjects yielded a 90% confidence interval of 1,077 units to 1,123 units Would you reject in a two sided 5% hypothesis test of $H_0:\mu=1,078 units$?
+
+No, you cannot reject, 1078 is in plausible 90% range of 1077:1123, so it is guaranteed to be in the 95% range.
+
 ##### Simulation of a coin flip
 
 Let's see if lower and upper limit of a simulation go above a 95% confidence interval:
@@ -500,7 +519,7 @@ ggplot(data.frame(x=pvals, y=coverage), aes(x=x, y=y)) +
     labs(x="probabilities", y="coverage")
 ```
 
-![](index_files/figure-html/unnamed-chunk-37-1.png)
+![](index_files/figure-html/unnamed-chunk-38-1.png)
 
 For n=20 we barely go above a 95% confidence interval.
 
@@ -523,7 +542,7 @@ ggplot(data.frame(x=pvals, y=coverage), aes(x=x, y=y)) +
     labs(x="probabilities", y="coverage")
 ```
 
-![](index_files/figure-html/unnamed-chunk-38-1.png)
+![](index_files/figure-html/unnamed-chunk-39-1.png)
 
 We have now several instances where we go above the 95% interval. In each simulation, we have more coin flips, the CLT performs better.
 
@@ -550,7 +569,7 @@ ggplot(data.frame(x=pvals, y=coverage), aes(x=x, y=y)) +
     labs(x="probabilities", y="coverage")
 ```
 
-![](index_files/figure-html/unnamed-chunk-39-1.png)
+![](index_files/figure-html/unnamed-chunk-40-1.png)
 
 So it is kept aabove the 95% confidence interval for all trials of the simulation.
 
@@ -604,7 +623,7 @@ ggplot(data.frame(x=lambdavals, y=coverage), aes(x=x, y=y)) +
     labs(x="lambdas", y="coverage")
 ```
 
-![](index_files/figure-html/unnamed-chunk-42-1.png)
+![](index_files/figure-html/unnamed-chunk-43-1.png)
 
 Never really good, but really bad for small values of lambda. Does it get any better in higher N? 
 
@@ -625,12 +644,12 @@ ggplot(data.frame(x=lambdavals, y=coverage), aes(x=x, y=y)) +
     labs(x="lambdas", y="coverage")
 ```
 
-![](index_files/figure-html/unnamed-chunk-43-1.png)
+![](index_files/figure-html/unnamed-chunk-44-1.png)
 
 
-### Student's T Confidence Intervals
+# Student's T Confidence Intervals
 
-#### Biometrika Analysis
+## Biometrika Analysis
 
 Quick analysis of the dataframe used by William Gosset (aka Student) in his Biometrika paper, which shows the increase in hours for 10 patients on 2 sleeping drugs.
 
@@ -661,7 +680,7 @@ ggplot(sleep, aes(x = group, y = extra, group = factor(ID))) +
     geom_point(size =10, pch = 21, fill = "salmon", alpha = .5)
 ```
 
-![](index_files/figure-html/unnamed-chunk-45-1.png)
+![](index_files/figure-html/unnamed-chunk-46-1.png)
 
 Lines connect the same subjects across different drugs, we can clearly see that drug 2 has a stronger impact in hours slept than drug 1.
 
@@ -763,7 +782,7 @@ t.test(extra ~ I(relevel(group, 2)), paired=TRUE, data=sleep)
 These all say that with probability .95 the average difference of effects (between the two drugs) for an individual patient is between 0.7 and 2.46 additional hours of sleep.
 
 
-##### Comparing Independent Groups
+## Comparing Independent Groups
 
 Comparing SBP (systolic blood pressure) for 8 contraceptive users versus 21 controls:
 
@@ -783,7 +802,7 @@ sp <- sqrt((7 * 15.34^2 + 20 * 18.23^2) / (8 + 21 -2))
 ## [1] -9.521097 20.361097
 ```
 
-##### Mistakenly Treating Data as Grouped
+## Mistakenly Treating Data as Grouped
 
 What happens when you use `t.test` and `paired=TRUE` when data is not paired? Back to the paired database:
 
@@ -807,7 +826,7 @@ rbind(
 ## [3,]  0.7001142 2.459886
 ```
 
-##### Handling Chick Weight
+## Handling Independent Groups
 
 Load chickweight
 
@@ -836,7 +855,7 @@ ggplot(ChickWeight, aes(x = Time, y = weight, colour = Diet, group = Chick)) +
     facet_grid(. ~ Diet)
 ```
 
-![](index_files/figure-html/unnamed-chunk-55-1.png)
+![](index_files/figure-html/unnamed-chunk-56-1.png)
 
 In dark the averages. We can see that diet 3 and 4 do seem to behave better than 1 and 2, but let's look at confidence intervals of those measurements. Let's do some transformations first.
 
@@ -898,7 +917,7 @@ ggplot(wideCW, aes(x = factor(Diet), y = gain, fill = factor(Diet))) +
     geom_violin(col = "black", size = 2)
 ```
 
-![](index_files/figure-html/unnamed-chunk-59-1.png)
+![](index_files/figure-html/unnamed-chunk-60-1.png)
 
 We are going to compare diet 1 and diet 4 - our assumption of equal variances does not seem to hold for this case, but let's test them anyways.
 
@@ -919,7 +938,7 @@ rbind(
 
 On the first case, we considered the variance the same and on the second different. 
 
-##### T Tests
+## T Tests
 
 Going back to our father/son height database. We want to test or $H_0$ that fathers and sons have similar heights. We can start by running `t.test`: 
 
@@ -968,7 +987,7 @@ This tells us that either our hypothesis $H_0$ is wrong or we're making a mistak
 Similarly, if a $(1-\alpha)%$ interval contains $\mu_0$ ($H_0$'s $\mu$), then we fail to reject $H_0$.
 
 
-### P-Values
+## P-Values
 
 Suppose you get a $T$ statistic of 2.5 for 15 $df$ testing $H_0 : \mu = \mu_0$ versus $H_a : \mu > \mu_0$. 
 
@@ -998,7 +1017,102 @@ pt(2.5, 15, lower.tail=TRUE)
 
 What is around 98.77%
 
-#### Attained Significance Level
+Another example: Consider the test of blood pressure drug, and the following measurements and baseline:
+
+
+```r
+subject <- c(1,2,3,4,5)
+baseline <- c(140,138,150,148,135)
+week2 <- c(132,135,151,146,130)
+df <- data.frame(subject, baseline, week2)
+df
+```
+
+```
+##   subject baseline week2
+## 1       1      140   132
+## 2       2      138   135
+## 3       3      150   151
+## 4       4      148   146
+## 5       5      135   130
+```
+
+What is the p-value for the associated 2-sided T-test? (considering observations are paired)
+
+
+```r
+test <- t.test(x=baseline, y=week2, alternative='two.sided', paired=TRUE)
+test$p.value
+```
+
+```
+## [1] 0.08652278
+```
+
+
+Another example: Coke versus Pepsi. Each of four people was asked which of two drinks they preferred. 3 of the 4 people chose Coke. Find a P-value for a test of the hypothesis that Coke is preferred to Pepsi using a one sided exact test.
+
+
+```r
+library(stats)
+n <- 4
+x <- 3
+binom.test(x=x, n=n, p=0.5, alternative='greater')$p.value
+```
+
+```
+## [1] 0.3125
+```
+
+Another example: Infection rates above 1 infection per 100 person days at risk is a benchmark. A hospital that had previously been above the benchmark had 10 infections over 1,787 person days at risk. What is the one sided P-value test of whether the hospital is below the standard? 
+
+
+```r
+p <- 1/100 # 1 infection per 100 person days
+pbar <- 10/1787 # rate above the benchmark
+n <- 1787 # sample period
+stdError <- sqrt(p * (1-p)/n)
+zTest <- (p - pbar)/stdError
+pnorm(zTest, lower.tail = FALSE) # below the standard
+```
+
+```
+## [1] 0.03066625
+```
+
+or
+
+
+```r
+poisson.test(10, T=1787, r=1/100, alternative="l")$p.value
+```
+
+```
+## [1] 0.03237153
+```
+
+Another example: 18 subjects were randomized, 9 each, to a new diet pill and a placebo. BMIs were measured at a baseline and again after having received the treatment (or placebo) for four weeks. The average difference from follow-up to the baseline (followup - baseline) was −3 kg/m2 for the treated group and 1 kg/m2 for the placebo group. The corresponding standard deviations of the differences was 1.5 kg/m2 for the treatment group and 1.8 kg/m2 for the placebo group. Does the change in BMI appear to differ between the treated and placebo groups? Assume normality of the underlying data and a common population variance, give a pvalue for a two sided t test.
+
+
+```r
+n <- 9
+df <- n + n - 2
+treatedDiff <- -3
+placeboDiff <- 1
+meanDiff <- treatedDiff - placeboDiff
+sdTreated <- 1.5
+sdPlacebo <- 1.8
+pooledVariance <- (((n - 1) * sdTreated^2) + ((n - 1) * sdPlacebo^2)) / df
+stdErrDiff <- sqrt(pooledVariance/n + pooledVariance/n)
+tObserved <- meanDiff / stdErrDiff
+2*pt(tObserved, df=df) 
+```
+
+```
+## [1] 0.0001025174
+```
+
+## Attained Significance Level
 
 Attained significance level is the lowest value of $\alpha$ where you will still reject $H_0$.
 
@@ -1020,7 +1134,7 @@ pnorm(2, lower.tail=FALSE)
 
 So, we reject $H_0$ for any $\alpha$ > 0.0227
 
-#### Binomial Example - one sided
+#### Binomial Examples - one sided
 
 A friend has 8 children, 7 are girls and no twins. If each birth is 50% probability boy/girl, what is the probability of getting 7 or more girls in 8 births?
 
@@ -1052,7 +1166,7 @@ pbinom(6, size=8, prob=0.5, lower.tail=FALSE)
 
 So, we will reject any $H_0$ for which p-value > 0.03515
 
-#### Binomial Example - one sided
+#### Binomial Examples - two sided
 
 Follow a black magic procedure:
 
@@ -1153,7 +1267,6 @@ I.e., there us a 64% probability of getting a mean of $\mu_a = 32$ if we conduct
 
 ## Testing 
 
-
 Since $Power = \sqrt{n} \frac {(\mu_a - \mu_0)}{\sigma}$
 
 `power.t.test` calculates what is missing given what you provide.
@@ -1221,7 +1334,39 @@ power.t.test(power=0.8, delta=100, sd=200, type='one.sample', alt='one.sided')$n
 
 All 60.4%
 
+## Examples
+
+In a study of 100 adults to measure a four year mean brain volume loss of .01 $mm^3$. The $sd$ of four year volume loss is .04 $mm^3$. About what would be the power of the study for a 5% one sided test versus a null hypothesis of no volume loss?
+
+
+```r
+n <- 100
+mu <- 0.01
+sigma <- 0.04
+level <- 0.05 # 5% 
+power.t.test(n=n, delta=mu, sd=sigma, sig.level=level, type='one.sample', alternative='one.sided')$power
+```
+
+```
+## [1] 0.7989855
+```
+
+Same as above, if want to test $n$ adults, what is the value of $n$ needed for 90% power of type one error rate of 5% one sided test versus a null hypothesis of no volume loss?
+
+
+```r
+power <- 0.9
+power.t.test(power=power, delta=mu, sd=sigma, sig.level=level, type='one.sample', alternative='one.sided')$n
+```
+
+```
+## [1] 138.3856
+```
+
+
 # Multiple Comparisons
+
+## Green Jelly Beans Cause Acne
 
 [Green Jelly Beans Cause Acne!](https://xkcd.com/882/)
 
@@ -1332,4 +1477,108 @@ plot(pValues, p.adjust(pValues, method='bonferroni'), pch=19)
 plot(pValues, p.adjust(pValues, method='BH'), pch=19)
 ```
 
-![](index_files/figure-html/unnamed-chunk-86-1.png)
+![](index_files/figure-html/unnamed-chunk-95-1.png)
+
+
+# Bootstrapping
+
+## Definition
+
+Basic bootstrap procedure:
+
+* Get a number $n$ of samples
+* Put all samples in a bag
+* Build $B$ different collection of samples ($B$ different simulations), in which every sample is taken from that bag,  *with replacement* (meaning, after you take an item of the bag, put it back in the bag)
+
+B should be as large as possible, so the montecarlo error is small.
+
+As a result, instead of one collection of samples of size $n$, you have $B$ samples, each with $n$ size (way more data). How to generate it:
+
+
+```r
+library(UsingR)
+data(father.son)
+x <- father.son$sheight # son's height
+n <- length(x)
+B <- 1000 # number of bootstraped samples
+resamples <- matrix(sample(x, n * B, replace=TRUE), B, n) # B rows, n columns
+resampledMedians <- apply(resamples, 1, median)
+```
+
+Things we can do with it:
+
+Does it look like a normal distribution? Let's look at its density estimate (aka histogram)
+
+
+```r
+hist(resampledMedians)
+```
+
+![](index_files/figure-html/unnamed-chunk-97-1.png)
+
+or 
+
+
+```r
+ggplot(data.frame(medians=resampledMedians), aes(x=resampledMedians)) +
+    geom_histogram(color='black', fill='lightblue', binwidth=0.05)
+```
+
+![](index_files/figure-html/unnamed-chunk-98-1.png)
+
+comparing that to the original distribution
+
+
+```r
+ggplot(data.frame(son.heights=x), aes(x=x)) +
+    geom_histogram(color='black', fill='lightgreen', binwidth=5)
+```
+
+![](index_files/figure-html/unnamed-chunk-99-1.png)
+
+
+What is the standard error of the median (calculated through the standard deviation of the median)?
+
+
+```r
+sd(resampledMedians)
+```
+
+```
+## [1] 0.08465921
+```
+
+What is the, say, 95% confidence interval of this distribution?
+
+
+```r
+quantile(resampledMedians, c(0.025, 0.975))
+```
+
+```
+##     2.5%    97.5% 
+## 68.41383 68.81415
+```
+
+## Permutation Tests
+
+"To calculate a P-value, you simply want to calculate the percentage of simulations where the simulated statistic was more extreme, in the favor of the alternative, than the observed. So more extreme, in the difference of mean settings, would be having a greater difference in the means, towards the direction of the alternative."
+
+Example: permutation test of B versus C
+
+
+```r
+data("InsectSprays")
+subdata <- InsectSprays[InsectSprays$spray %in% c('B', 'C'), ]
+y <- subdata$count
+group <- as.character(subdata$spray)
+testStatistic <- function(w, g) mean(w[g = 'B']) - mean(w[g == 'C'])
+observedStatistic <- testStatistic(y, group)
+permutations <- sapply(1:10000, function(i) testStatistic(y, sample(group)))
+observedStatistic
+```
+
+```
+## [1] NA
+```
+
