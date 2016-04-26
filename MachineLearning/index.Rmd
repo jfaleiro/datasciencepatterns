@@ -1,0 +1,312 @@
+---
+title: "Machine Learning"
+author: "J Faleiro"
+date: "April 19, 2015"
+output: 
+    html_document:
+        keep_md: true
+        toc: true
+        theme: united
+---
+
+# Required libraries
+
+```{r, warning=FALSE, message=FALSE}
+if (!require("pacman")) install.packages("pacman")
+pacman::p_load(caret, e1071, kernlab, ggplot2)
+```
+
+# Prediction
+
+## Building a predictor
+
+Steps:
+
+1. Question
+2. Input data
+3. Features
+4. Algorithm
+5. Parameters
+6. Evaluation
+
+Spam example:
+
+```{r}
+library(kernlab)
+data(spam)
+head(spam$your)
+```
+
+Density distributions of word 'your' in spam and non-spam emails
+
+```{r}
+plot(density(spam$your[spam$type=='nonspam']), 
+     col='blue', main='', xlab="frequency of word 'your'")
+lines(density(spam$your[spam$type=='spam']), col='red')
+```
+
+* what blue shows: a lot of non-spam emails have close to zero 'your'
+* what red shows: a lot of spam emails have from 0 to 4, some with 8, words 'your'
+
+Algorithm. put a cutoff threshold, right after the peak of blue non-spam emails. Anything having more 'your' word above that, is spam, not spam otherwise.
+
+```{r}
+prediction <- ifelse(spam$your > 0.5, 'spam', 'nonspam')
+table(prediction, spam$type)/length(spam$type)
+```
+
+Meaning, with this simple algorithm you will be right about spam detection approximatelly 75% of the time:
+
+```{r}
+0.4590306 + 0.2923278
+```
+
+## In sample error vs out of sample errors
+
+Building a predictor in terms of average number of capital letters (`spam$capitalAve`):
+
+```{r}
+library(kernlab)
+data(spam)
+set.seed(333)
+smallSpam <- spam[sample(dim(spam)[1], size=10),]
+spamLabel <- (smallSpam$type=='spam')*1 + 1
+plot(smallSpam$capitalAve, col=spamLabel)
+```
+
+We will build a predictor that separate red dots (spam) from black dots (ham) based on the average of capital letters:
+
+```{r}
+rule1 <- function(x) {
+    prediction <- rep(NA, length(x))
+    prediction[x > 2.7] <- 'spam'
+    prediction[x < 2.4] <- 'nonspam'
+    prediction[x >= 2.4 & x <= 2.45] <- 'spam'
+    prediction[x > 2.45 & x <= 2.70] <- 'nonspam'
+    return(prediction)
+}
+table(rule1(smallSpam$capitalAve), smallSpam$type)
+```
+
+100% correct, in sample error is zero
+
+```{r}
+rule2 <- function(x) {
+    prediction <- rep(NA, length(x))
+    prediction[x > 2.8] <- 'spam'
+    prediction[x <= 2.8] <- 'nonspam'
+    return(prediction)
+}
+table(rule2(smallSpam$capitalAve), smallSpam$type)
+```
+
+About 90% correct, in sample error is 10%
+
+What if we apply to all data?
+
+```{r}
+table(rule1(spam$capitalAve), spam$type)
+```
+
+The out-sample error increased from 0 to `r 100*(588+647)/(588+647+2141+1225)`% - this is an example of **overfitting**  - the rules were defined too tightly to the sample dataset.
+
+```{r}
+table(rule2(spam$capitalAve), spam$type)
+```
+
+How many times were we right for each rule (accuracy)?
+
+```{r}
+c(sum(rule1(spam$capitalAve) == spam$type),
+  sum(rule2(spam$capitalAve) == spam$type))
+```
+
+## Types of Errors
+
+Suppose that we have created a machine learning algorithm that predicts whether a link will be clicked with 99% sensitivity and 99% specificity. The rate the link is clicked is 1/1000 of visits to a website. If we predict the link will be clicked on a specific visit, what is the probability it will actually be clicked?
+
+```{r}
+sensitivity <- specificity <- 0.99
+population <- 100000 
+rateClick <- 1/1000
+```
+
+$sensitivity = \frac {TP}{(TP + FN)}$
+
+```{r}
+FN <- 1
+TP <- FN*sensitivity*100
+```
+
+$population = TP + FN + FP + TN$
+
+$FP + TN = population - (FN + TP)$
+
+```{r}
+FPplusTN <- population - (FN + TP)
+```
+
+$specificity = \frac {TN}{(TN + FP)}$
+
+```{r}
+TN <- specificity * FPplusTN
+FP <- population - (FN + TP + TN)
+```
+
+```{r}
+c(TP, FP)
+c(FN, TN)
+```
+
+Positive predictive value is the probablity the link will be clicked:
+
+$PPV = \frac {TP}{(TP + FP)}$
+
+```{r}
+TP/(TP+FP)
+```
+
+i.e. ~ **9.01%**
+
+# Caret Package
+
+## SPAM example
+
+### Data Splitting
+
+#### Partitioning
+
+How to create a partition of training/test data, using 75% for training and 23% for testing, for an outcome `spam$type`:
+
+```{r}
+library(caret); library(e1071); library(kernlab)
+data(spam)
+inTrain <- createDataPartition(y=spam$type, p=0.75, list=FALSE)
+```
+
+`inTrain` has indexes of all items selected to be in the training data set, so we subset `training` and `testing`.
+
+```{r}
+training <- spam[inTrain,]
+testing <- spam[-inTrain,]
+dim(training)
+```
+
+Now, `training` has all index of selected in `inTrain` and `testing` all that is `-inTrain` (not in).
+
+#### K-Fold 
+
+Splitting with K-folds, we pass the outcome, number of folds we want to create. We want each fold to be a list, and to return the training set.
+
+```{r}
+set.seed(32323)
+folds <- createFolds(y=spam$type, k=10, list=TRUE, returnTrain=TRUE)
+sapply(folds, length)
+```
+
+The size of each fold is ~ 4141.
+
+And here's how we look at samples in fold one:
+
+```{r}
+folds[[1]][1:10]
+```
+
+We can also returns the test samples in each fold (`returnTrain=FALSE`):
+
+```{r}
+set.seed(32323)
+folds <- createFolds(y=spam$type, k=10, list=TRUE, returnTrain=FALSE)
+sapply(folds, length)
+```
+
+The size of each fold is ~ 461 (smaller than training, they are split in a 75/25 proportion).
+
+And here's how we look at samples in fold one:
+
+```{r}
+folds[[1]][1:10]
+```
+
+#### Resampling
+
+```{r}
+set.seed(32323)
+folds <- createResample(y=spam$type, times=10, list=TRUE)
+sapply(folds, length)
+```
+
+The size of each fold is ~ 4601.
+
+And here's how we look at samples in fold one:
+
+```{r}
+folds[[1]][1:10]
+```
+
+Since we are resampling, we are seeing some og the items repeated in a fold.
+
+#### Time Slices
+
+Simple random sampling of time series is probably not the best way to resample times series data. [Hyndman and Athanasopoulos (2013)](https://www.otexts.org/fpp/2/5) discuss rolling forecasting origin techniques that move the training and test sets in time. 
+
+```{r}
+set.seed(32323)
+tme <- 1:1000
+folds <- createTimeSlices(y=tme, initialWindow=20, horizon=10)
+names(folds)
+```
+
+
+```{r}
+folds$train[[1]]
+```
+
+We have 20 values (matching `initialWindow`)
+
+```{r}
+folds$test[[1]]
+```
+
+We have 10 values (matching `horizon`)
+
+### Fit a Model 
+
+Now let's predict `type` using all the other features in the `training` dataset we created before, using a generalized linear model, glm, as a method:
+
+```{r fitting, cache=TRUE, warning=FALSE}
+set.seed(32343)
+modelFit <- train(type ~ ., data=training, method='glm')
+modelFit
+```
+
+As you can see, 57 predictors, 1 outcome (class nonspam/spam) and 3451 samples match the results from `dim(training)` (3451 rows and 58 columns). Some additional information, like the resampling method, in this case `Bootstrapped` (random sampling with replacement, aka bootstraping), with 25 repetitions.
+
+Resampling brought accuracy to about **91.6%**.
+
+### Final Model
+
+To take a peek of the model, in this case, coefficients between class (spam/nospam) and each of the 57 predictors:
+
+```{r dependson='fitting'}
+modelFit$finalModel
+```
+
+### Prediction
+
+To predict if items on dataset `testing` belong to any of the classes spam/nospam:
+
+```{r}
+predictions <- predict(modelFit, newdata=testing)
+head(predictions)
+```
+
+### Confusion Matrix
+
+To validade how close your predictions were to the class of the testing dataset, we generate a confusion matrix:
+
+```{r}
+confusionMatrix(predictions, testing$type)
+```
+
+The reference gives us some idea of hits/misses, as well as others as accuracy, specificity, sensitivity, confidence intervals and Kappa values.
