@@ -1,7 +1,7 @@
 ---
 title: "Patterns for Regression Models"
 author: "J Faleiro"
-date: "April 10, 2016"
+date: "April 10, 2015"
 output: 
     html_document:
         keep_md: true

@@ -1,6 +1,6 @@
 # Patterns for Regression Models
 J Faleiro  
-April 10, 2016  
+April 10, 2015  
 
 # Required libraries
 
@@ -1474,7 +1474,7 @@ sum(ey * ex1) / sum(ex1 ^ 2)
 ```
 
 ```
-## [1] 1.016098
+## [1] 1.005187
 ```
 
 Same as:
@@ -1486,7 +1486,7 @@ coef(lm(ey ~ ex1 - 1))
 
 ```
 ##      ex1 
-## 1.016098
+## 1.005187
 ```
 
 And should be the same if you add all regressors, looking under column x1:
@@ -1498,7 +1498,7 @@ coef(lm(y ~ x1 + x2 + x3))
 
 ```
 ## (Intercept)          x1          x2          x3 
-##   0.9800510   1.0160979   0.9987278   1.0098213
+##   1.0167748   1.0051873   1.0044461   0.9999759
 ```
 
 ## Sample Analysys: Swiss Population Late 1800
@@ -2397,7 +2397,7 @@ round(dfbetas(fit)[1:10, 2], 3)
 
 ```
 ##      1      2      3      4      5      6      7      8      9     10 
-##  7.956  0.003 -0.045 -0.219 -0.018 -0.011 -0.022 -0.047 -0.017 -0.197
+##  5.736 -0.059 -0.045 -0.255  0.021 -0.152 -0.102 -0.021 -0.319 -0.005
 ```
 
 Measurement of the first point is orders of magnitude higher than other points.
@@ -2411,7 +2411,7 @@ round(hatvalues(fit)[1:10], 3)
 
 ```
 ##     1     2     3     4     5     6     7     8     9    10 
-## 0.507 0.010 0.013 0.031 0.012 0.013 0.019 0.018 0.010 0.038
+## 0.493 0.022 0.010 0.034 0.010 0.023 0.018 0.011 0.032 0.010
 ```
 
 Measurement of the first point is higher than other points.
@@ -2438,7 +2438,7 @@ round(dfbetas(fit2)[1 : 10, 2], 3)
 
 ```
 ##      1      2      3      4      5      6      7      8      9     10 
-## -0.263  0.024 -0.036  0.007 -0.017 -0.018  0.287  0.130 -0.072 -0.013
+##  0.031 -0.008 -0.002  0.062 -0.073  0.000 -0.153 -0.073 -0.046  0.086
 ```
 
 Still large, but not as much as others
@@ -2450,7 +2450,7 @@ round(hatvalues(fit2)[1 : 10], 3)
 
 ```
 ##     1     2     3     4     5     6     7     8     9    10 
-## 0.216 0.018 0.012 0.011 0.010 0.011 0.053 0.015 0.024 0.017
+## 0.184 0.010 0.014 0.020 0.011 0.010 0.021 0.014 0.019 0.029
 ```
 
 Hat value of the first observation is much larger than before.
@@ -3051,6 +3051,8 @@ exp(coef(fit))[1]/exp(coef(fit))[2]
 ## factor(spray)A 
 ##      0.9456522
 ```
+
+The estimated relative rate comparing spray A to spray B is about **0.9456522**
 
 # Splines
 
