@@ -1,5 +1,5 @@
 ---
-title: "Machine Learning"
+title: "Machine Learning: The Caret Package"
 author: "J Faleiro"
 date: "April 19, 2015"
 output: 
@@ -16,161 +16,7 @@ if (!require("pacman")) install.packages("pacman")
 pacman::p_load(caret, e1071, kernlab, ggplot2, ISLR, Hmisc, gridExtra, RANN, AppliedPredictiveModeling)
 ```
 
-# Prediction
-
-## Building a predictor
-
-Steps:
-
-1. Question
-2. Input data
-3. Features
-4. Algorithm
-5. Parameters
-6. Evaluation
-
-Spam example:
-
-```{r}
-library(kernlab)
-data(spam)
-head(spam$your)
-```
-
-Density distributions of word 'your' in spam and non-spam emails
-
-```{r}
-plot(density(spam$your[spam$type=='nonspam']), 
-     col='blue', main='', xlab="frequency of word 'your'")
-lines(density(spam$your[spam$type=='spam']), col='red')
-```
-
-* what blue shows: a lot of non-spam emails have close to zero 'your'
-* what red shows: a lot of spam emails have from 0 to 4, some with 8, words 'your'
-
-Algorithm. put a cutoff threshold, right after the peak of blue non-spam emails. Anything having more 'your' word above that, is spam, not spam otherwise.
-
-```{r}
-prediction <- ifelse(spam$your > 0.5, 'spam', 'nonspam')
-table(prediction, spam$type)/length(spam$type)
-```
-
-Meaning, with this simple algorithm you will be right about spam detection approximatelly 75% of the time:
-
-```{r}
-0.4590306 + 0.2923278
-```
-
-## In sample error vs out of sample errors
-
-Building a predictor in terms of average number of capital letters (`spam$capitalAve`):
-
-```{r}
-library(kernlab)
-data(spam)
-set.seed(333)
-smallSpam <- spam[sample(dim(spam)[1], size=10),]
-spamLabel <- (smallSpam$type=='spam')*1 + 1
-plot(smallSpam$capitalAve, col=spamLabel)
-```
-
-We will build a predictor that separate red dots (spam) from black dots (ham) based on the average of capital letters:
-
-```{r}
-rule1 <- function(x) {
-    prediction <- rep(NA, length(x))
-    prediction[x > 2.7] <- 'spam'
-    prediction[x < 2.4] <- 'nonspam'
-    prediction[x >= 2.4 & x <= 2.45] <- 'spam'
-    prediction[x > 2.45 & x <= 2.70] <- 'nonspam'
-    return(prediction)
-}
-table(rule1(smallSpam$capitalAve), smallSpam$type)
-```
-
-100% correct, in sample error is zero
-
-```{r}
-rule2 <- function(x) {
-    prediction <- rep(NA, length(x))
-    prediction[x > 2.8] <- 'spam'
-    prediction[x <= 2.8] <- 'nonspam'
-    return(prediction)
-}
-table(rule2(smallSpam$capitalAve), smallSpam$type)
-```
-
-About 90% correct, in sample error is 10%
-
-What if we apply to all data?
-
-```{r}
-table(rule1(spam$capitalAve), spam$type)
-```
-
-The out-sample error increased from 0 to `r 100*(588+647)/(588+647+2141+1225)`% - this is an example of **overfitting**  - the rules were defined too tightly to the sample dataset.
-
-```{r}
-table(rule2(spam$capitalAve), spam$type)
-```
-
-How many times were we right for each rule (accuracy)?
-
-```{r}
-c(sum(rule1(spam$capitalAve) == spam$type),
-  sum(rule2(spam$capitalAve) == spam$type))
-```
-
-## Types of Errors
-
-Suppose that we have created a machine learning algorithm that predicts whether a link will be clicked with 99% sensitivity and 99% specificity. The rate the link is clicked is 1/1000 of visits to a website. If we predict the link will be clicked on a specific visit, what is the probability it will actually be clicked?
-
-```{r}
-sensitivity <- specificity <- 0.99
-population <- 100000 
-rateClick <- 1/1000
-```
-
-$sensitivity = \frac {TP}{(TP + FN)}$
-
-```{r}
-FN <- 1
-TP <- FN*sensitivity*100
-```
-
-$population = TP + FN + FP + TN$
-
-$FP + TN = population - (FN + TP)$
-
-```{r}
-FPplusTN <- population - (FN + TP)
-```
-
-$specificity = \frac {TN}{(TN + FP)}$
-
-```{r}
-TN <- specificity * FPplusTN
-FP <- population - (FN + TP + TN)
-```
-
-```{r}
-c(TP, FP)
-c(FN, TN)
-```
-
-Positive predictive value is the probablity the link will be clicked:
-
-$PPV = \frac {TP}{(TP + FP)}$
-
-```{r}
-TP/(TP+FP)
-```
-
-i.e. ~ **9.01%**
-
-# Caret Package
-
-## Alzheimer Example
+# Alzheimer Example
 
 ```{r}
 library(AppliedPredictiveModeling)
@@ -178,7 +24,7 @@ data(AlzheimerDisease)
 adData <- data.frame(diagnosis, predictors)
 ```
 
-### Data Splitting
+## Data Splitting
 
 ```{r}
 trainIndex <- createDataPartition(diagnosis, p=0.5, list=FALSE)
@@ -186,11 +32,11 @@ training <- adData[trainIndex,]
 testing <- adData[-trainIndex,]
 ```
 
-## SPAM example
+# SPAM example
 
-### Data Splitting
+## Data Splitting
 
-#### Partitioning
+### Partitioning
 
 How to create a partition of training/test data, using 75% for training and 23% for testing, for an outcome `spam$type`:
 
@@ -210,7 +56,7 @@ dim(training)
 
 Now, `training` has all index of selected in `inTrain` and `testing` all that is `-inTrain` (not in).
 
-#### K-Fold 
+### K-Fold 
 
 Splitting with K-folds, we pass the outcome, number of folds we want to create. We want each fold to be a list, and to return the training set.
 
@@ -244,7 +90,7 @@ And here's how we look at samples in fold one:
 folds[[1]][1:10]
 ```
 
-#### Resampling
+### Resampling
 
 ```{r}
 set.seed(32323)
@@ -262,7 +108,7 @@ folds[[1]][1:10]
 
 Since we are resampling, we are seeing some og the items repeated in a fold.
 
-#### Time Slices
+### Time Slices
 
 Simple random sampling of time series is probably not the best way to resample times series data. [Hyndman and Athanasopoulos (2013)](https://www.otexts.org/fpp/2/5) discuss rolling forecasting origin techniques that move the training and test sets in time. 
 
@@ -287,7 +133,7 @@ folds$test[[1]]
 
 We have 10 values (matching `horizon`)
 
-### Fit a Model 
+## Fit a Model 
 
 We use `train` function to fit a model:
 
@@ -315,7 +161,7 @@ Resampling brought accuracy to about **91.6%**.
 
 Most of these procedures are based on pseudo random numbers, so `set.seed` is crucial.
 
-### Final Model
+## Final Model
 
 To take a peek of the model, in this case, coefficients between class (spam/nospam) and each of the 57 predictors:
 
@@ -323,7 +169,7 @@ To take a peek of the model, in this case, coefficients between class (spam/nosp
 modelFit$finalModel
 ```
 
-### Prediction
+## Prediction
 
 To predict if items on dataset `testing` belong to any of the classes spam/nospam:
 
@@ -332,7 +178,7 @@ predictions <- predict(modelFit, newdata=testing)
 head(predictions)
 ```
 
-### Confusion Matrix
+## Confusion Matrix
 
 To validade how close your predictions were to the class of the testing dataset, we generate a confusion matrix:
 
@@ -342,7 +188,7 @@ confusionMatrix(predictions, testing$type)
 
 The reference gives us some idea of hits/misses, as well as others as accuracy, specificity, sensitivity, confidence intervals and Kappa values.
 
-## Plotting Predictors
+# Plotting Predictors
 
 ```{r}
 library(ISLR); library(ggplot2); library(caret)
@@ -352,7 +198,7 @@ summary(Wage)
 
 we can see the data is partial: all male, all in mid atlantic region.
 
-### Data splitting
+## Data splitting
 
 Let's use a 70% split of training and 30% testing:
 
@@ -369,7 +215,7 @@ dim(testing)
 
 Let's set testing set aside and don't use it for anything at this point. Not even plotting!
 
-### Feature Plot
+## Feature Plot
 
 To first way to get some insight into data is through a simple pairs plot, or scatter plot, between regressors and outcome:
 
@@ -379,7 +225,7 @@ featurePlot(x=training[,c('age','education','jobclass')], y=training$wage, plot=
 
 From left lower to right top corner, on the diagonal are `age`, `education`, `jobclass` and `y` (`wage`). You are looking for any data that shows a trend, on this case it seems there is a positive correlation between `education` and `wage` for example.
 
-### Bi-Variate Plotting
+## Bi-Variate Plotting
 
 We can look at a bi-dimensional relationship through simple qplot.
 
@@ -389,7 +235,7 @@ qplot(age, wage, data=training)
 
 It shows some correlation, but to the next question - why is there a cluster on the top of the plot?
 
-### Multi Variate Plotting
+## Multi Variate Plotting
 
 Let's bring some color to the plot by adding a second regressor:
 
@@ -406,7 +252,7 @@ qplot(age, wage, colour=education, data=training) +
     geom_smooth(method='lm', formula=y~x)
 ```
 
-### Density Plots
+## Density Plots
 
 ```{r}
 qplot(wage, colour=education, data=training, geom='density')
@@ -415,7 +261,7 @@ qplot(wage, colour=education, data=training, geom='density')
 Shows that lot of people with less of HS education are concentrated under 100, and the highest concentration of advance degrees folks near 300.
 
 
-### Making Factors
+## Making Factors
 
 We can use factors, a factorized version of the continuous variable, to make it easier to look for patterns:
 
@@ -455,7 +301,7 @@ prop.table(t1, 1)
 
 i.e. 62% of low wage jobs are industrial class and 38% are information class.
 
-### Second Example: Concrete Strength
+## Example: Concrete Strength
 
 ```{r}
 library(AppliedPredictiveModeling); library(caret)
@@ -470,7 +316,7 @@ training <- mixtures[inTrain,]
 testing <- mixtures[-inTrain,]
 ```
 
-#### Feature Plot
+### Feature Plot
 
 ```{r}
 featurePlot(x=training[,c('Cement','BlastFurnaceSlag','FlyAsh','Water')], y=training$CompressiveStrength, plot='pairs')
@@ -485,7 +331,7 @@ featurePlot(x=training[,c('Superplasticizer','CoarseAggregate','FineAggregate','
 
 Course and fine aggregates are well correlated to strength.
 
-#### Plot Outcome by one Regressor
+### Plot Outcome by one Regressor
 
 ```{r}
 qplot(CompressiveStrength, FlyAsh, data=training) +
@@ -494,13 +340,13 @@ qplot(CompressiveStrength, FlyAsh, data=training) +
 
 No correlation between FlyAsh and strength.
 
-#### Plot Training by Index
+### Plot Training by Index
 
 ```{r}
 plot(training$CompressiveStrength, pch=19)
 ```
 
-#### Plot Training by Index, Coloring on Regressors
+### Plot Training by Index, Coloring on Regressors
 
 ```{r}
 qplot(1:length(training$CompressiveStrength), training$CompressiveStrength, 
@@ -527,9 +373,9 @@ qplot(1:length(training$CompressiveStrength), training$CompressiveStrength,
 
 FlyAsh follows a bit the pattern of strength, but we cannot say it 'perfectly explains' the outcome vs index plot.
 
-## Pre-Processing
+# Pre-Processing
 
-### Why Pre-Processing
+## Why Pre-Processing
 
 ```{r}
 library(AppliedPredictiveModeling); library(caret)
@@ -572,7 +418,7 @@ c(mean(training$capitalAve), sd(training$capitalAve))
 
 Mean is low and values are skewed and highly variable. This will trick most ML algos.
 
-### Standardizing
+## Standardizing
 
 ```{r}
 trainCapAve <- training$capitalAve
@@ -620,7 +466,7 @@ modelFit <- train(type ~ ., data=training, method='glm', preProcess=c('center','
 modelFit
 ```
 
-### Box-Cox Transformations
+## Box-Cox Transformations
 
 This is a useful data transformation technique used to stabilize variance, make the data more normal distribution-like and for other data stabilization procedures.
 
@@ -632,7 +478,7 @@ par(mfrow=c(1,2)); hist(trainCapAveS); qqnorm(trainCapAveS)
 
 you can see that there is still a large number of samples on the lower bound of the histogram, as well as the QQ plot is not entirelly linear.
 
-### Imputing Data
+## Imputing Data
 
 Using K nearest neighbors imputation. Takes an average of the K closest matches to a missing value and replace that missing value by that average.
 
@@ -663,7 +509,7 @@ quantile((capAve - capAveTruth)[selectNA])
 quantile((capAve - capAveTruth)[!selectNA])
 ```
 
-## Covariate Creation
+# Covariate Creation
 
 $Covariate = Predictors = Features$
 
@@ -678,7 +524,7 @@ training <- Wage[inTrain,]
 testing <- Wage[-inTrain,]
 ```
 
-### Dummy Variables
+## Dummy Variables
 
 Convert factor variables to indicator variables
 
@@ -695,7 +541,7 @@ head(predict(dummies,newdata=training))
 
 You can see 0s and 1s indicating when a row is industrial and information, similar to a bit mask.
 
-### Removing Zero Variability Covariates
+## Removing Zero Variability Covariates
 
 To remove regressors that have a very low variability so they might not be good predictors
 
@@ -706,7 +552,7 @@ nsv
 
 For each line the algo calculates a percentage of unique values `percentUnique` and frequency ratio `freqRatio`. We can see that a few covariates are considered less relevant due to low variability: `sex`, `region`, etc.
 
-### Spline Basis Functions
+## Spline Basis Functions
 
 One other way is to use a line to find regressors associated to orders of a polynomial function, i.e.:
 
@@ -737,7 +583,7 @@ p <- predict(bsBasis, age=testing$age)
 head(p)
 ```
 
-## Preprocessing with Principal Component Analysis
+# Preprocessing with Principal Component Analysis
 
 ```{r}
 library(caret); library(e1071); library(kernlab)
@@ -888,9 +734,9 @@ c(cm1$overall[1], cm2$overall[1])
 ```
 
 
-## Predicting with Regression: Single Covariate
+# Predicting with Regression: Single Covariate
 
-### Example: Old Faithful
+## Example: Old Faithful
 
 Predicting eruption time and duration of the "old faithful" geiser:
 
@@ -945,7 +791,7 @@ Same thing, using `predict`:
 predict(lm1, data.frame(waiting=80))
 ```
 
-### Plotting Training vs Testing
+## Plotting Training vs Testing
 
 ```{r}
 par(mfrow=c(1,2))
@@ -959,7 +805,7 @@ lines(testFaith$waiting, predict(lm1, newdata=testFaith),lwd=3)
 
 Doesn't perfectly fit the training set, but it is a pretty good approximation for predictions on the testing set.
 
-### Calculating Training and Testing Sets Errors
+## Calculating Training and Testing Sets Errors
 
 Root mean squared errors (RMSE) on training:
 
@@ -975,7 +821,7 @@ sqrt(sum((predict(lm1, newdata=testFaith) - testFaith$eruptions)^2))
 
 About the same, but of course the error on testing set is higher.
 
-### Prediction Intervals
+## Prediction Intervals
 
 Parameter `interval='prediction'` tells `predict` to generate a prediction interval:
 
@@ -986,9 +832,9 @@ plot(testFaith$waiting, testFaith$eruptions, pch=19, col='blue') # test data pre
 matlines(testFaith$waiting[ord], pred1[ord,], type='l',col=c(1,2,2),lty=c(1,1,1),lwd=2)
 ```
 
-## Predicting with Regression: Multiple Covariates
+# Predicting with Regression: Multiple Covariates
 
-### Example: Wages
+## Example: Wages
 
 Partitioning the Wage dataset again, 70/30 between training and testing data sets:
 
@@ -1008,7 +854,7 @@ dim(training)
 dim(testing)
 ```
 
-### Fitting Linear Models
+## Fitting Linear Models
 
 A linear model for multiple regressors would look something like this:
 
@@ -1025,11 +871,11 @@ print(modFit)
 
 You can see we have 10 predictors, one for age, 2+1 for jobclass and 5+1 for education, where +1 is the predictor for no factor selected (created by default).
 
-### Diagnostic Plots
+## Diagnostic Plots
 
 We use diagnostic plots to get some insight into wether or not our model is missing important predictors.
 
-#### Residual Plots
+### Residual Plots
 
 ```{r}
 finMod <- modFit$finalModel
@@ -1038,7 +884,7 @@ plot(finMod, 1, pch=19, cex=0.5, col='#00000010')
 
 Is the residuals vs fitted plot. We want to see a straight line on residuals=0 (what is not, for higher fitted values) and small number of outliers (what we are not seeing, look at the numbers on the top).
 
-#### Plot by Variables Missing on Initial Model
+### Plot by Variables Missing on Initial Model
 
 We can also color by variables not used in the original model:
 
@@ -1048,7 +894,7 @@ qplot(finMod$fitted, finMod$residuals, col=race, data=training)
 
 We can see that several outliers are related to race (white race), indicating that race is a potential missing regressor.
 
-#### Plot by Index
+### Plot by Index
 
 Index is just the position of a sample on the dataset.
 
@@ -1059,7 +905,7 @@ plot(finMod$residuals, pch=19)
 We can see a clear trend, residuals grow with index. Also more outliers as index grow (right side of the plot). This indicates a potential regressor is missing in our model, usually related to some time related continous variable (age, date, timestamp, etc.)
 
 
-### Predicited vs Truth in Test Set
+## Predicited vs Truth in Test Set
 
 This is a post-mortem analysis, do not go back to your model and change it based on what you find here (big chances of overfitting if you do so)
 
@@ -1070,7 +916,7 @@ qplot(wage, pred, col=year, data=testing)
 
 You are looking for a linear, 45 degrees fitted line between predicted and truth, no outliers. You add color to find a variable that might be potentially impeding that linear relationship from occuring.
 
-### Including all the Variables
+## Including all the Variables
 
 ```{r wage-fitting-multilinear-all, cache=TRUE, warning=FALSE}
 modFitAll <- train(wage ~ ., method='lm', data=training)
