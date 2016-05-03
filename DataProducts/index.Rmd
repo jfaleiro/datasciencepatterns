@@ -13,7 +13,7 @@ output:
 
 ```{r, warning=FALSE, message=FALSE}
 if (!require("pacman")) install.packages("pacman")
-pacman::p_load(googleVis, devtools)
+pacman::p_load(googleVis, devtools, pryr)
 ```
 
 # Shiny & rCharts
@@ -98,6 +98,89 @@ options(op)
 
 You can see a number of other cool plots and customizations with `library(googleViz); demo(googleViz)`
 
-# Presenting Data Analysis
+# Classes
 
+Examples of a few classes
 
+```{r}
+class(rnorm(100))
+```
+
+```{r}
+class(NA)
+```
+
+```{r}
+class('foo')
+```
+
+```{r}
+x <- rnorm(100)
+y <- x + rnorm(100)
+fit <- lm(y ~ x)
+class(fit)
+```
+
+Which method is being called?
+
+```{r}
+set.seed(2)
+x <- rnorm(100)
+class(x)
+mean(x)
+```
+
+The class of x is numeric, but there is no `mean` function for numeric objects. Se we call the default function for method mean.
+
+```{r}
+getS3method('mean', 'default')
+```
+
+S4 classes: creating a Polygon class:
+
+```{r}
+library(methods)
+setClass('polygon', representation(x='numeric', y='numeric'))
+```
+
+Creating a plot `method` with `setMethod`:
+
+```{r}
+setMethod('plot', 'polygon',
+          function(x, y, ...) {
+              plot(x@x, x@y, type='n', ...)
+              xp <- c(x@x, x@x[1])
+              yp <- c(x@y, x@y[1])
+              lines(xp, yp)
+              })
+```
+
+And here it is:
+
+```{r}
+showMethods('plot')
+```
+
+And to get the body of this S4 method:
+
+```{r}
+getMethod('plot', 'polygon')
+```
+
+Finally, using `polygon` and `plot`:
+
+```{r}
+p <- new('polygon', x=c(1,2,3,4), y=c(1,2,3,1))
+plot(p)
+```
+
+How to find out if a method is generic?
+
+```{r}
+sapply(c('mean', 'show', 'lm', 'colSums', 'dgamma', 'predict'), isGeneric)
+```
+
+```{r}
+library(pryr)
+c(mean=ftype(mean), show=ftype(show), lm=ftype(lm), colsums=ftype(colSums), dgamma=ftype(dgamma), predict=ftype(predict))
+```
