@@ -118,7 +118,7 @@ $(document).ready(function () {
 
 <h1 class="title toc-ignore">Reproducible Research</h1>
 <h4 class="author"><em>J Faleiro</em></h4>
-<h4 class="date"><em>MArch 19, 2015</em></h4>
+<h4 class="date"><em>March 19, 2015</em></h4>
 
 </div>
 
@@ -203,7 +203,7 @@ for (i in 1:55) {
 </div>
 <div id="measure-of-uncertainty" class="section level2">
 <h2>Measure of Uncertainty</h2>
-<p>Use best predictor found above</p>
+<p>Use best predictor found above:</p>
 <pre class="r"><code>predictionModel = glm(numType ~ charDollar, family=&quot;binomial&quot;, data=trainSpam)</code></pre>
 <pre><code>## Warning: glm.fit: fitted probabilities numerically 0 or 1 occurred</code></pre>
 <pre class="r"><code># get predictions on the test set
@@ -217,7 +217,7 @@ table(predictedSpam, testSpam$type)</code></pre>
 ## predictedSpam nonspam spam
 ##        nospam    1346  458
 ##        spam        61  449</code></pre>
-<p>Mistakes are 61 + 458, so</p>
+<p>Mistakes are 61 + 458, so so calculare the <code>errorRate</code>:</p>
 <pre class="r"><code>errorRate &lt;- (61 + 458) / (1346 + 458 + 61 + 449)
 sprintf('error rate: %s', errorRate)</code></pre>
 <pre><code>## [1] &quot;error rate: 0.22428694900605&quot;</code></pre>

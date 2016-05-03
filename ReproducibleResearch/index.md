@@ -1,6 +1,6 @@
 # Reproducible Research
 J Faleiro  
-MArch 19, 2015  
+March 19, 2015  
 
 # Required libraries
 
@@ -134,7 +134,7 @@ The best predictor is 'charDollar'.
 
 ## Measure of Uncertainty
 
-Use best predictor found above
+Use best predictor found above:
 
 
 ```r
@@ -162,7 +162,7 @@ table(predictedSpam, testSpam$type)
 ##        spam        61  449
 ```
 
-Mistakes are 61 + 458, so
+Mistakes are 61 + 458, so so calculare the `errorRate`:
 
 
 ```r
