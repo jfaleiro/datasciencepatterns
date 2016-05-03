@@ -1,0 +1,103 @@
+---
+title: "Data Products"
+author: "J Faleiro"
+date: "May 1, 2015"
+output: 
+    html_document:
+        keep_md: true
+        toc: true
+        theme: united
+---
+
+# Required libraries
+
+```{r, warning=FALSE, message=FALSE}
+if (!require("pacman")) install.packages("pacman")
+pacman::p_load(googleVis, devtools)
+```
+
+# Shiny & rCharts
+
+## rCharts example
+
+rCharts is not on CRAN, so...
+
+```{r}
+library(devtools)
+install_github('rCharts', 'ramnathv', ref = 'dev')
+```
+
+This setup is required, mainly to import CSS files that sets up width/height for the plots. It imports CSS files and JavaScript libraries from online resources. 
+
+```{r, results='asis'}
+library(rCharts)
+## utility function to add required assets such as CSS and JS libraries
+add_lib_assets <- function(lib, cdn = F,css=NULL) {
+    assets = get_assets(get_lib(lib), cdn = cdn)
+    if(!is.null(css)){assets$css=c(assets$css,css)}
+    styles <- lapply(assets$css, function(style) {
+        sprintf("<link rel='stylesheet' href=%s>", style)
+    })
+
+    scripts <- lapply(assets$jshead, function(script) {
+        sprintf("<script type='text/javascript' src=%s></script>", script)
+    })
+    cat(paste(c(styles, scripts), collapse = "\n"))
+}
+
+# get assets from online repositories 
+add_lib_assets("NVD3",cdn=TRUE,css="http://rawgithub.com/ramnathv/rCharts/master/inst/libraries/nvd3/css/rNVD3.css") 
+add_lib_assets("Polycharts",cdn=TRUE)
+```
+
+Static plot, hover over data samples for more details
+
+```{r, results='asis'}
+names(iris) = gsub("\\.", "", names(iris))
+r1<-rPlot(SepalLength ~ SepalWidth | Species, data = iris, color = 'Species', type = 'point')
+r1$print("polyScatter")
+```
+
+Slightly dynamic, you can select different types (grouped, stacked) for display.
+
+```{r nvd3mbar, results='asis',comment=NA}
+hair_eye_male <- subset(as.data.frame(HairEyeColor), Sex == "Male")
+n1 <- nPlot(Freq ~ Hair, group = "Eye", data = hair_eye_male, type = "multiBarChart")
+n1$print("nvd3mbar")
+```
+
+## Google Vis Example
+
+Initialization
+
+```{r}
+library(googleVis)
+op <- options(gvis.plot.tag='chart')
+```
+
+Static plot:
+
+```{r results='asis', tidy=FALSE}
+CityPopularity$Mean=mean(CityPopularity$Popularity)
+CC <- gvisComboChart(CityPopularity, xvar='City',
+          yvar=c('Mean', 'Popularity'),
+          options=list(seriesType='bars',
+                       width=450, height=300,
+                       title='City Popularity',
+                       series='{0: {type:\"line\"}}'))
+plot(CC)
+```
+
+Some animation:
+
+```{r results='asis', tidy=FALSE}
+M <- gvisMotionChart(Fruits, 'Fruit', 'Year', options=list(width=600, heigth=400))
+plot(M)
+options(op)
+```
+
+You can see a number of other cool plots and customizations with `library(googleViz); demo(googleViz)`
+
+# Presenting Data Analysis
+
+
