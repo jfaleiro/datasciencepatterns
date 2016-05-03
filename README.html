@@ -121,15 +121,35 @@ $(document).ready(function () {
 <div id="patterns-in-data-science" class="section level1">
 <h1>Patterns in Data Science</h1>
 <p>This is a collection of code excerpts, mostly in R, to address common puzzles in data sciences. They are organized by different bodies of knowledge and should serve as something similar to a cheat sheet. I am still in the process of gathering them from a number of different projects and course notes done in the past, so more content to be added and what is already in here might get further organized (time allowing).</p>
-<p>Most of this content is not original, and is either copied from my own other projects and the absolute majority from lectures of the <a href="http://www.jhsph.edu/departments/biostatistics">Data Science Specialization at Johns Hopkins</a>.</p>
-<p>Note: github has size limitations on serving HTML content, and most of this material is rendered as an HTML output from R chunks. If you have problems visualizing the content, click on the <strong>[MD]</strong> or <strong>[RMD]</strong> for the markup document.</p>
-<div id="statistical-inference-md-rmd" class="section level2">
-<h2><a href="http://htmlpreview.github.io/?https://github.com/jfaleiro/datasciencepatterns/blob/master/StatisticalInference/index.html">Statistical Inference</a> – <a href="StatisticalInference/index.md">MD</a> <a href="StatisticalInference/index.Rmd">RMD</a></h2>
-<p>Statistical inference is the process of drawing conclusions about populations or scientific truths from data. There are many modes of performing inference including statistical modeling, data oriented strategies and explicit use of designs and randomization in analyses.</p>
+<p>Most of this content is not original, and is either copied from my own other projects or (the absolute majority) from lectures and class notes of the <a href="http://www.jhsph.edu/departments/biostatistics">Data Science Specialization at Johns Hopkins</a>.</p>
+<p><strong>Note:</strong> github has size limitations on serving HTML content, and most of this material is rendered as an HTML output from R chunks. If you have problems visualizing the content, click on the <strong>[MD]</strong> or <strong>[RMD]</strong> for the markup document.</p>
+<div id="reproducible-research" class="section level2">
+<h2><a href="https://cdn.rawgit.com/jfaleiro/datasciencepatterns/master/ReproducibleResearch/index.html">Reproducible Research</a></h2>
+<p><strong><a href="ReproducibleResearch/index.md">[MD]</a> // <a href="ReproducibleResearch/index.Rmd">[RMD]</a></strong></p>
+<p>Reproducible research is the idea that data analyses, and more generally, scientific claims, are published with their data and software code so that others may verify the findings and build upon them. The need for reproducibility is increasing dramatically as data analyses become more complex, involving larger datasets and more sophisticated computations. Reproducibility allows for people to focus on the actual content of a data analysis, rather than on superficial details reported in a written summary. In addition, reproducibility makes an analysis more useful to others because the data and code that actually conducted the analysis are available.</p>
+<p>Sample Online Research <a href="https://github.com/jfaleiro/stormanalysis">(Browse the Code)</a></p>
+<ul>
+<li><a href="http://rpubs.com/jfaleiro/severeweatherimpact">Health and Economic Impact of Severe Weather Events</a></li>
+</ul>
 </div>
-<div id="regression-models-md-rmd" class="section level2">
-<h2><a href="https://cdn.rawgit.com/jfaleiro/datasciencepatterns/master/RegressionModels/index.html">Regression Models</a> – <a href="RegressionModels/index.md">MD</a> <a href="RegressionModels/index.Rmd">RMD</a></h2>
+<div id="statistical-inference" class="section level2">
+<h2><a href="https://cdn.rawgit.com/jfaleiro/datasciencepatterns/master/StatisticalInference/index.html">Statistical Inference</a></h2>
+<p><strong><a href="StatisticalInference/index.md">[MD]</a> // <a href="StatisticalInference/index.Rmd">[RMD]</a></strong></p>
+<p>Statistical inference is the process of drawing conclusions about populations or scientific truths from data. There are many modes of performing inference including statistical modeling, data oriented strategies and explicit use of designs and randomization in analyses.</p>
+<p>Sample Simulations <a href="https://github.com/jfaleiro/inferentialsimulations">(Browse the Code)</a></p>
+<ul>
+<li><a href="https://github.com/jfaleiro/inferentialsimulations/blob/master/ExponentialDistributions.pdf">Comparative Analysis of Exponential Distributions and Properties of the Central Limit Theorem</a></li>
+<li><a href="https://github.com/jfaleiro/inferentialsimulations/blob/master/VitamicCEffectsOnOdontoblasts.pdf">Response Effect of Vitamin C on Odontoblast Length</a></li>
+</ul>
+</div>
+<div id="regression-models" class="section level2">
+<h2><a href="https://cdn.rawgit.com/jfaleiro/datasciencepatterns/master/RegressionModels/index.html">Regression Models</a></h2>
+<p><strong><a href="RegressionModels/index.md">[MD]</a> // <a href="RegressionModels/index.Rmd">[RMD]</a></strong></p>
 <p>Linear models, as their name implies, relates an outcome to a set of predictors of interest using linear assumptions. Regression models, a subset of linear models, are the most important statistical analysis tool in data sciences. These notes cover regression analysis, least squares and inference using regression models.</p>
+<p>Sample Report <a href="https://github.com/jfaleiro/carbonfootprint">(Browse the Code)</a></p>
+<ul>
+<li><a href="https://github.com/jfaleiro/automobilecarbonfootprint/blob/master/PredictingAutomobileConsumption.pdf">Predicting the Carbon Footprint of Automobiles Through Regression Models</a></li>
+</ul>
 </div>
 <div id="machine-learning" class="section level2">
 <h2>Machine Learning</h2>
@@ -137,10 +157,11 @@ $(document).ready(function () {
 <p><a href="https://cdn.rawgit.com/jfaleiro/datasciencepatterns/master/MachineLearning/CaretPackage/index.html">The Caret Package</a></p>
 <p>Annotations on tools and techniques for understanding, building, and testing prediction functions. Common tasks performed by data scientists and data analysts in prediction and machine learning. Basic grounding concepts related to selection of training and tests sets, overfitting, and error rates. A wide range of model based and algorithmic machine learning methods including regression, classification trees, Naive Bayes, and random forests. The complete process of building prediction functions including data collection, feature creation, algorithms, and evaluation.</p>
 </div>
-<div id="data-products-md-rmd" class="section level2">
-<h2><a href="https://cdn.rawgit.com/jfaleiro/datasciencepatterns/blob/master/DataProducts/index.html">Data Products</a> // <a href="DataProduct/index.md">[MD]</a> // <a href="DataProduct/index.Rmd">[RMD]</a></h2>
+<div id="data-products" class="section level2">
+<h2><a href="https://cdn.rawgit.com/jfaleiro/datasciencepatterns/master/DataProducts/index.html">Data Products</a></h2>
+<p><strong><a href="DataProduct/index.md">[MD]</a> // <a href="DataProduct/index.Rmd">[RMD]</a></strong></p>
 <p>A data product is the final result of a statistical analysis for larger audiences. Data products automate complex analysis tasks or use technology to expand the utility of a data informed model, algorithm or inference. These are notes about the basics of creating data products as web applications, R packages, and interactive graphics.</p>
-<p>Sample Applications - <a href="https://github.com/jfaleiro/carbonfootprint">Browse the Code</a></p>
+<p>Sample Applications <a href="https://github.com/jfaleiro/carbonfootprint">(Browse the Code)</a></p>
 <ul>
 <li><a href="https://jfaleiro.shinyapps.io/carbonfootprint/">Browsing Features Related to the Carbon Footprint of mid-70’s Automobiles</a></li>
 <li><a href="https://rpubs.com/jfaleiro/carbonfootprint">Data Analysis of Automobile Carbon Footprint</a></li>
