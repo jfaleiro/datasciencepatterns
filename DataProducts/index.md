@@ -311,14 +311,14 @@ plot(CC)
 ```
 
 <!-- ComboChart generated in R 3.2.4 by googleVis 0.5.10 package -->
-<!-- Tue May  3 10:31:18 2016 -->
+<!-- Tue May  3 14:41:54 2016 -->
 
 
 <!-- jsHeader -->
 <script type="text/javascript">
  
 // jsData 
-function gvisDataComboChartID1f4a4dd2dcd () {
+function gvisDataComboChartID22d093d36df () {
 var data = new google.visualization.DataTable();
 var datajson =
 [
@@ -361,8 +361,8 @@ return(data);
 }
  
 // jsDrawChart
-function drawChartComboChartID1f4a4dd2dcd() {
-var data = gvisDataComboChartID1f4a4dd2dcd();
+function drawChartComboChartID22d093d36df() {
+var data = gvisDataComboChartID22d093d36df();
 var options = {};
 options["allowHtml"] = true;
 options["seriesType"] = "bars";
@@ -372,7 +372,7 @@ options["title"] = "City Popularity";
 options["series"] = {0: {type:"line"}};
 
     var chart = new google.visualization.ComboChart(
-    document.getElementById('ComboChartID1f4a4dd2dcd')
+    document.getElementById('ComboChartID22d093d36df')
     );
     chart.draw(data,options);
     
@@ -396,9 +396,9 @@ if (newPackage)
   pkgs.push(chartid);
   
 // Add the drawChart function to the global list of callbacks
-callbacks.push(drawChartComboChartID1f4a4dd2dcd);
+callbacks.push(drawChartComboChartID22d093d36df);
 })();
-function displayChartComboChartID1f4a4dd2dcd() {
+function displayChartComboChartID22d093d36df() {
   var pkgs = window.__gvisPackages = window.__gvisPackages || [];
   var callbacks = window.__gvisCallbacks = window.__gvisCallbacks || [];
   window.clearTimeout(window.__gvisLoad);
@@ -422,11 +422,11 @@ callbacks.shift()();
 </script>
  
 <!-- jsChart -->  
-<script type="text/javascript" src="https://www.google.com/jsapi?callback=displayChartComboChartID1f4a4dd2dcd"></script>
+<script type="text/javascript" src="https://www.google.com/jsapi?callback=displayChartComboChartID22d093d36df"></script>
  
 <!-- divChart -->
   
-<div id="ComboChartID1f4a4dd2dcd" 
+<div id="ComboChartID22d093d36df" 
   style="width: 450; height: 300;">
 </div>
 
@@ -439,14 +439,14 @@ plot(M)
 ```
 
 <!-- MotionChart generated in R 3.2.4 by googleVis 0.5.10 package -->
-<!-- Tue May  3 10:31:18 2016 -->
+<!-- Tue May  3 14:41:54 2016 -->
 
 
 <!-- jsHeader -->
 <script type="text/javascript">
  
 // jsData 
-function gvisDataMotionChartID1f4a4a9a59bc () {
+function gvisDataMotionChartID22d060b04b63 () {
 var data = new google.visualization.DataTable();
 var datajson =
 [
@@ -544,8 +544,8 @@ return(data);
 }
  
 // jsDrawChart
-function drawChartMotionChartID1f4a4a9a59bc() {
-var data = gvisDataMotionChartID1f4a4a9a59bc();
+function drawChartMotionChartID22d060b04b63() {
+var data = gvisDataMotionChartID22d060b04b63();
 var options = {};
 options["width"] =    600;
 options["height"] =    500;
@@ -553,7 +553,7 @@ options["state"] = "";
 options["heigth"] =    400;
 
     var chart = new google.visualization.MotionChart(
-    document.getElementById('MotionChartID1f4a4a9a59bc')
+    document.getElementById('MotionChartID22d060b04b63')
     );
     chart.draw(data,options);
     
@@ -577,9 +577,9 @@ if (newPackage)
   pkgs.push(chartid);
   
 // Add the drawChart function to the global list of callbacks
-callbacks.push(drawChartMotionChartID1f4a4a9a59bc);
+callbacks.push(drawChartMotionChartID22d060b04b63);
 })();
-function displayChartMotionChartID1f4a4a9a59bc() {
+function displayChartMotionChartID22d060b04b63() {
   var pkgs = window.__gvisPackages = window.__gvisPackages || [];
   var callbacks = window.__gvisCallbacks = window.__gvisCallbacks || [];
   window.clearTimeout(window.__gvisLoad);
@@ -603,11 +603,11 @@ callbacks.shift()();
 </script>
  
 <!-- jsChart -->  
-<script type="text/javascript" src="https://www.google.com/jsapi?callback=displayChartMotionChartID1f4a4a9a59bc"></script>
+<script type="text/javascript" src="https://www.google.com/jsapi?callback=displayChartMotionChartID22d060b04b63"></script>
  
 <!-- divChart -->
   
-<div id="MotionChartID1f4a4a9a59bc" 
+<div id="MotionChartID22d060b04b63" 
   style="width: 600; height: 500;">
 </div>
 
@@ -713,7 +713,7 @@ getS3method('mean', 'default')
 ##     }
 ##     .Internal(mean(x))
 ## }
-## <bytecode: 0x7fd6f472acd0>
+## <bytecode: 0x7fdf3b446ad0>
 ## <environment: namespace:base>
 ```
 
