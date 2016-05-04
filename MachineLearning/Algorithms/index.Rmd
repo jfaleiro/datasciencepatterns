@@ -1,0 +1,429 @@
+---
+title: "Machine Learning: Algorithms"
+author: "J Faleiro"
+date: "April 28, 2015"
+output: 
+    html_document:
+        keep_md: true
+        toc: true
+        theme: united
+---
+
+# Required libraries
+
+```{r, warning=FALSE, message=FALSE}
+if (!require("pacman")) install.packages("pacman")
+pacman::p_load(caret, e1071, kernlab, ggplot2, ISLR, Hmisc, 
+               gridExtra, RANN, AppliedPredictiveModeling, rattle, magrittr, 
+               rpart.plot, ElemStatLearn, party, randomForest, gbm,
+               MASS, klaR, dplyr, pgmm)
+```
+
+# Trees
+
+## Classifying Species of Plants
+
+Trying to predict (classify) species of plants based on trees. Which features I have?
+
+```{r}
+library(ggplot2); data(iris)
+names(iris)
+```
+
+Where `species` is the outcome.
+
+```{r}
+table(iris$Species)
+```
+
+50 samples of each.
+
+```{r}
+inTrain <- createDataPartition(y=iris$Species, p=0.7, list=FALSE)
+training <- iris[inTrain,]
+testing <- iris[-inTrain,]
+c(dim(training),'|',dim(testing))
+```
+
+```{r}
+qplot(Petal.Width, Sepal.Width, colour=Species, data=training)
+```
+
+3 very distinct clusters.
+
+We will use `train` with `method='rpart'` the method for classification by trees. There are other tree building options in R: `party`, and out of the caret package `tree`.
+
+```{r}
+library(caret)
+modFit <- train(Species ~ ., method='rpart', data=training)
+print(modFit$finalModel)
+```
+
+You can read the splits to understand what the classification algo is doing. 
+
+You can also plot the dendogram of the classification tree:
+
+```{r}
+plot(modFit$finalModel, uniform=TRUE, main='classification tree')
+text(modFit$finalModel, use.n=TRUE, all=TRUE, cex=.8)
+```
+
+Or a prettier plot with `rattle`:
+
+```{r}
+library(rattle)
+fancyRpartPlot(modFit$finalModel)
+```
+
+You can predict new values with the usual `predict`:
+
+```{r}
+predict(modFit, newData=testing)
+```
+
+## Classifying Cell Segmentations
+
+```{r}
+library(caret)
+library(AppliedPredictiveModeling)
+data(segmentationOriginal)
+```
+
+Subsetting into training and testing:
+
+```{r}
+library(dplyr)
+set.seed(125)
+training <- filter(segmentationOriginal, Case == 'Train')
+testing <- filter(segmentationOriginal, Case == 'Test')
+c(dim(training),'|',dim(testing))
+```
+
+Fitting a model
+
+```{r}
+set.seed(125)
+modFit <- train(Class ~ ., method='rpart', data=training)
+print(modFit$finalModel)
+```
+
+Visualizing the tree
+
+```{r}
+library(rattle)
+fancyRpartPlot(modFit$finalModel)
+```
+
+Predicting for specific values:
+
+1. TotalIntench2 = 23,000; FiberWidthCh1 = 10; PerimStatusCh1=2
+2. TotalIntench2 = 50,000; FiberWidthCh1 = 10;VarIntenCh4 = 100
+3. TotalIntench2 = 57,000; FiberWidthCh1 = 8;VarIntenCh4 = 100
+4. FiberWidthCh1 = 8;VarIntenCh4 = 100; PerimStatusCh1=2 
+
+You can do visually, on the tree plotted above, where `Class` will be, for each case:
+
+1. PS
+2. WS
+3. PS
+4. cannot be calculated
+
+I do not know how to come up to the same values using a computational, non visual approach. R's handling of NA values in prediction algorithms is weird:
+
+```{r}
+library(dplyr)
+emptyDf <- subset(testing, FALSE) # empty df with all columns
+df <- data.frame(TotalIntench2=c(23000,50000,57000,NA),
+                 FiberWidthCh1=c(10,10,8,8),
+                 PerimStatusCh1=c(2,NA,NA,2),
+                 VarIntenCh4=c(NA,100,100,100))
+df2 <- rbind_list(emptyDf, df)
+```
+
+```{r}
+predict(modFit, newdata=df2, na.action=na.omit)
+```
+
+Omits all `NA` values, dropping all outcomes. And the alternative:
+
+```{r}
+predict(modFit, newdata=df2, na.action=na.pass)
+```
+
+Produces random results. The results are different. The solution would be around imputing missing results, I do not fully control the technique.
+
+## Classifying Olive Oil
+
+```{r}
+library(pgmm)
+data(olive)
+olive = olive[,-1]
+summary(olive)
+```
+
+Fitting...
+
+```{r}
+set.seed(125)
+modFit <- train(Area ~ ., method='rpart', data=olive)
+print(modFit$finalModel)
+```
+
+Visualizing...
+
+```{r}
+fancyRpartPlot(modFit$finalModel)
+```
+
+Predicting...
+
+```{r}
+predict(modFit, newdata=as.data.frame(t(colMeans(olive))))
+```
+
+This result is strange because `Area` should be a qualitative variable - but tree is reporting the average value of Area as a numeric variable in the leaf predicted for newdata.
+
+# Bagging
+
+Short for 'bootstrap aggregating`. Example: ozone data
+
+```{r}
+library(ElemStatLearn); data(ozone)
+ozone <- ozone[order(ozone$ozone),]
+head(ozone)
+```
+
+We will try to predict `temperature` as a function of `ozone`.
+
+## Bagged LOESS
+
+How to calculate a bagged LOESS curve, a curve that captures a the variability on past measurements:
+
+```{r}
+ll <- matrix(NA, nrow=10, ncol=155)
+for (i in 1:10) {
+    ss <- sample(1:dim(ozone)[1], replace=TRUE) # sample with replacement, the entire dataset
+    ozone0 <- ozone[ss,] 
+    ozone0 <- ozone0[order(ozone0$ozone),] # ozone0 is the bootstrap of ozone
+    loess0 <- loess(temperature ~ ozone, data=ozone0, span=0.2) # smoothing curve
+    ll[i,] <- predict(loess0, newdata=data.frame(ozone=1:155)) # i-th row is the prediction
+}
+```
+
+Some other bagging available as a `method` in `train` function: `bagEarth`, `treeBag`, `bagFDA`. Or you can use the `bag` function.
+
+How does it look like?
+
+```{r}
+plot(ozone$ozone, ozone$temperature, pch=19, cex=0.5)
+for (i in 1:10) {
+    lines(1:155, ll[i,], col='grey', lwd=2)
+}
+lines(1:155, apply(ll, 2, mean), col='red', lwd=2)
+```
+
+You can do your own bagging in caret:
+
+```{r}
+predictors <- data.frame(ozone=ozone$ozone)
+temperature <- ozone$temperature
+treebag <- bag(predictors, temperature, B=10,
+               bagControl=bagControl(fit=ctreeBag$fit,
+                                     predict=ctreeBag$pred,
+                                     aggregate=ctreeBag$aggregate))
+```
+
+How well does it capture a trend in data points?
+
+```{r}
+plot(ozone$ozone, temperature, col='lightgrey',pch=19)
+points(ozone$ozone, predict(treebag$fits[[1]]$fit, predictors), pch=19, col='red')
+points(ozone$ozone, predict(treebag, predictors), pch=19, col='blue') # custom bagging
+```
+
+## Parts of Bagging
+
+### Fitting
+
+```{r}
+ctreeBag$fit
+```
+
+### Prediction
+
+```{r}
+ctreeBag$pred
+```
+
+### Aggregation
+
+```{r}
+ctreeBag$aggregate
+```
+
+# Random Forests
+
+## Definition and Use
+
+Average of different paths taken on different executions through different paths. Example, iris data:
+
+```{r}
+set.seed(123)
+data(iris); library(ggplot2); library(caret)
+inTrain <- createDataPartition(y=iris$Species, p=0.7, list=FALSE)
+training <- iris[inTrain,]
+testing <- iris[-inTrain,]
+```
+
+Training using random forests, `method='rf'`, outcome is `Species`, regressors are all the other features.
+
+```{r}
+modFit <- train(Species ~ ., data=training, method='rf', prox=TRUE)
+modFit
+```
+
+You can check any individual trees, i.e. 
+
+```{r}
+getTree(modFit$finalModel, k=2) # second tree
+```
+
+You can check for "class centers" as well, cluster centers, obtained with `classCenter`:
+
+```{r}
+irisP <- as.data.frame(classCenter(training[,c(3,4)], training$Species, modFit$finalModel$prox))
+irisP$Species <- rownames(irisP)
+qplot(Petal.Width, Petal.Length, col=Species, data=training) +
+    geom_point(aes(x=Petal.Width, y=Petal.Length, col=Species), size=5, shape=4, data=irisP) # plot X's
+```
+
+You can predict new values with `predict`
+
+```{r}
+pred <- predict(modFit, testing)
+```
+
+And check for correct predictions:
+
+```{r}
+testing$predRight <- pred==testing$Species
+table(pred, testing$Species)
+```
+
+We can see a few mis-classified values, let's check where they are:
+
+```{r}
+qplot(Petal.Width, Petal.Length, colour=predRight, data=testing, main='data predictions')
+```
+
+You can see the misclassified values are right on the border of one or more clusters.
+
+## Variable Importance
+
+```{r}
+library(ElemStatLearn)
+data(vowel.train)
+data(vowel.test)
+```
+
+```{r rf.factor, cache=TRUE}
+vowel.train$y <- as.factor(vowel.train$y)
+vowel.test$y <- as.factor(vowel.test$y)
+```
+
+```{r rf.fit.vowels, cache=TRUE, dependson='rf.factor'}
+set.seed(33833) 
+modFit <- train(y ~ ., data=vowel.train, method='rf')
+```
+
+```{r}
+varImp(modFit, data=vowel.train)
+```
+
+```{r rf.fit.vowels.2, cache=TRUE, dependson='rf.factor'}
+set.seed(33833) 
+modFit <- randomForest(y ~ ., data=vowel.train)
+```
+
+```{r}
+varImp(modFit)
+```
+
+```{r}
+order(varImp(modFit), decreasing = TRUE)
+```
+# Boosting
+
+Using boosting in our Wage example
+
+```{r}
+set.seed(123)
+library(ggplot2); library(caret); library(ISLR); data(wage)
+Wage <- subset(Wage, select=-c(logwage))
+inTrain <- createDataPartition(y=Wage$wage, p=0.7, list=FALSE)
+training <- Wage[inTrain,]
+testing <- Wage[-inTrain,]
+```
+
+Fitting the model with `gbm`, "boosting with trees". It has to be cached this is really slow:
+
+```{r fit.gbm, cache=TRUE, message=FALSE, warning=FALSE}
+modFit <- train(wage ~ ., method='gbm', data=training, verbose=FALSE)
+print(modFit)
+```
+
+How did it do? Let's plot the predicted `wage` against the `wage` in testing set. Ideally it should all fit in a perfect line.
+
+```{r}
+qplot(predict(modFit, testing), wage, data=testing)
+```
+
+Not too bad, a lot of variability, outliers but there is a correlation.
+
+# Model Based Prediction
+
+```{r}
+set.seed(123)
+data(iris); library(ggplot2); library(caret)
+names(iris)
+```
+
+```{r}
+table(iris$Species)
+```
+
+```{r}
+inTrain <- createDataPartition(y=iris$Species, p=0.7, list=FALSE)
+training <- iris[inTrain,]
+testing <- iris[-inTrain,]
+c(dim(training), dim(testing))
+```
+
+Training with LDA classification, `method='lda'`: 
+
+```{r train.lda, cache=TRUE, warning=FALSE, message=FALSE}
+modlda <- train(Species ~ ., data=training, method='lda')
+plda <- predict(modlda, testing)
+```
+
+Training with naive bayesian classification, `method='nb'`:
+
+```{r train.nb, cache=TRUE, warning=FALSE, message=FALSE}
+modnb <- train(Species ~ ., data=training, method='nb')
+pnb <- predict(modnb, testing)
+```
+
+How did they agree?
+
+```{r}
+table(plda, pnb)
+```
+
+The two methods disagree on 2 instances. Where are them?
+
+```{r}
+equalPredictions <- (plda == pnb)
+qplot(Petal.Width, Sepal.Width, col=equalPredictions, data=testing)
+```
+
+They have been misclassified either because they lay in between clusters or is an outlier.
