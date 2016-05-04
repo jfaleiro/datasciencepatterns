@@ -13,7 +13,8 @@ output:
 
 ```{r, warning=FALSE, message=FALSE}
 if (!require("pacman")) install.packages("pacman")
-pacman::p_load(caret, e1071, kernlab, ggplot2, ISLR, Hmisc, gridExtra, RANN, AppliedPredictiveModeling)
+pacman::p_load(caret, e1071, kernlab, ggplot2, ISLR, Hmisc, gridExtra, RANN, 
+               AppliedPredictiveModeling)
 ```
 
 # Alzheimer Example
@@ -930,3 +931,44 @@ pred <- predict(modFitAll, testing)
 qplot(wage, pred, data=testing)
 ```
 
+## Example: South Africa Heart Disease Data
+
+Partitioning the data:
+
+```{r}
+library(ElemStatLearn)
+data(SAheart)
+set.seed(8484)
+train = sample(1:dim(SAheart)[1],size=dim(SAheart)[1]/2,replace=F)
+trainSA = SAheart[train,]
+testSA = SAheart[-train,]
+head(trainSA)
+```
+
+Fitting a model:
+
+```{r}
+set.seed(13234)
+modFit <- train(chd ~ age + alcohol + obesity + tobacco + typea + ldl, 
+                method='glm', family='binomial', data=trainSA)
+```
+
+Calculating misclassification:
+
+```{r}
+missClass <- function(values,prediction){
+    sum(((prediction > 0.5)*1) != values)/length(values)
+}
+```
+
+Test set misclassification:
+
+```{r}
+missClass(testSA$chd, predict(modFit, newdata=testSA))
+```
+
+Training set misclassification:
+
+```{r}
+missClass(trainSA$chd, predict(modFit, newdata=trainSA))
+```

@@ -7,7 +7,8 @@ April 19, 2015
 
 ```r
 if (!require("pacman")) install.packages("pacman")
-pacman::p_load(caret, e1071, kernlab, ggplot2, ISLR, Hmisc, gridExtra, RANN, AppliedPredictiveModeling)
+pacman::p_load(caret, e1071, kernlab, ggplot2, ISLR, Hmisc, gridExtra, RANN, 
+               AppliedPredictiveModeling)
 ```
 
 # Alzheimer Example
@@ -217,10 +218,10 @@ args(trainControl)
 ##     returnResamp = "final", savePredictions = FALSE, classProbs = FALSE, 
 ##     summaryFunction = defaultSummary, selectionFunction = "best", 
 ##     preProcOptions = list(thresh = 0.95, ICAcomp = 3, k = 5), 
-##     sampling = NULL, index = NULL, indexOut = NULL, timingSamps = 0, 
-##     predictionBounds = rep(FALSE, 2), seeds = NA, adaptive = list(min = 5, 
-##         alpha = 0.05, method = "gls", complete = TRUE), trim = FALSE, 
-##     allowParallel = TRUE) 
+##     sampling = NULL, index = NULL, indexOut = NULL, indexFinal = NULL, 
+##     timingSamps = 0, predictionBounds = rep(FALSE, 2), seeds = NA, 
+##     adaptive = list(min = 5, alpha = 0.05, method = "gls", complete = TRUE), 
+##     trim = FALSE, allowParallel = TRUE) 
 ## NULL
 ```
 
@@ -346,25 +347,25 @@ confusionMatrix(predictions, testing$type)
 ## 
 ##           Reference
 ## Prediction nonspam spam
-##    nonspam     664   58
-##    spam         33  395
+##    nonspam     664   42
+##    spam         33  411
 ##                                           
-##                Accuracy : 0.9209          
-##                  95% CI : (0.9037, 0.9358)
+##                Accuracy : 0.9348          
+##                  95% CI : (0.9189, 0.9484)
 ##     No Information Rate : 0.6061          
-##     P-Value [Acc > NIR] : < 2e-16         
+##     P-Value [Acc > NIR] : <2e-16          
 ##                                           
-##                   Kappa : 0.8327          
-##  Mcnemar's Test P-Value : 0.01187         
+##                   Kappa : 0.8629          
+##  Mcnemar's Test P-Value : 0.3556          
 ##                                           
 ##             Sensitivity : 0.9527          
-##             Specificity : 0.8720          
-##          Pos Pred Value : 0.9197          
-##          Neg Pred Value : 0.9229          
+##             Specificity : 0.9073          
+##          Pos Pred Value : 0.9405          
+##          Neg Pred Value : 0.9257          
 ##              Prevalence : 0.6061          
 ##          Detection Rate : 0.5774          
-##    Detection Prevalence : 0.6278          
-##       Balanced Accuracy : 0.9123          
+##    Detection Prevalence : 0.6139          
+##       Balanced Accuracy : 0.9300          
 ##                                           
 ##        'Positive' Class : nonspam         
 ## 
@@ -454,7 +455,7 @@ To first way to get some insight into data is through a simple pairs plot, or sc
 featurePlot(x=training[,c('age','education','jobclass')], y=training$wage, plot='pairs')
 ```
 
-![](index_files/figure-html/unnamed-chunk-23-1.png)
+![](index_files/figure-html/unnamed-chunk-23-1.png)<!-- -->
 
 From left lower to right top corner, on the diagonal are `age`, `education`, `jobclass` and `y` (`wage`). You are looking for any data that shows a trend, on this case it seems there is a positive correlation between `education` and `wage` for example.
 
@@ -467,7 +468,7 @@ We can look at a bi-dimensional relationship through simple qplot.
 qplot(age, wage, data=training)
 ```
 
-![](index_files/figure-html/unnamed-chunk-24-1.png)
+![](index_files/figure-html/unnamed-chunk-24-1.png)<!-- -->
 
 It shows some correlation, but to the next question - why is there a cluster on the top of the plot?
 
@@ -480,7 +481,7 @@ Let's bring some color to the plot by adding a second regressor:
 qplot(age, wage, colour=jobclass, data=training)
 ```
 
-![](index_files/figure-html/unnamed-chunk-25-1.png)
+![](index_files/figure-html/unnamed-chunk-25-1.png)<!-- -->
 
 Many of the plots on the cluster seem to be on the 'information' job class, so that might explain a bit of the cluster.
 
@@ -492,7 +493,7 @@ qplot(age, wage, colour=education, data=training) +
     geom_smooth(method='lm', formula=y~x)
 ```
 
-![](index_files/figure-html/unnamed-chunk-26-1.png)
+![](index_files/figure-html/unnamed-chunk-26-1.png)<!-- -->
 
 ## Density Plots
 
@@ -501,7 +502,7 @@ qplot(age, wage, colour=education, data=training) +
 qplot(wage, colour=education, data=training, geom='density')
 ```
 
-![](index_files/figure-html/unnamed-chunk-27-1.png)
+![](index_files/figure-html/unnamed-chunk-27-1.png)<!-- -->
 
 Shows that lot of people with less of HS education are concentrated under 100, and the highest concentration of advance degrees folks near 300.
 
@@ -528,7 +529,7 @@ table(cutWage)
 qplot(cutWage, age, data=training, fill=cutWage, geom=c('boxplot'))
 ```
 
-![](index_files/figure-html/unnamed-chunk-29-1.png)
+![](index_files/figure-html/unnamed-chunk-29-1.png)<!-- -->
 
 We can overlap boxplots with points (box plots hide extreme samples)
 
@@ -540,7 +541,7 @@ p2 <- qplot(cutWage, age, data=training, fill=cutWage, geom=c('boxplot', 'jitter
 grid.arrange(p1, p2, ncol=2)
 ```
 
-![](index_files/figure-html/unnamed-chunk-30-1.png)
+![](index_files/figure-html/unnamed-chunk-30-1.png)<!-- -->
 
 We can use tables with the cut (factorized) variable of the continuous variable, to look for patterns
 
@@ -625,7 +626,7 @@ testing <- mixtures[-inTrain,]
 featurePlot(x=training[,c('Cement','BlastFurnaceSlag','FlyAsh','Water')], y=training$CompressiveStrength, plot='pairs')
 ```
 
-![](index_files/figure-html/unnamed-chunk-35-1.png)
+![](index_files/figure-html/unnamed-chunk-35-1.png)<!-- -->
 
 Cement is well correlated to strength.
 
@@ -635,7 +636,7 @@ featurePlot(x=training[,c('Superplasticizer','CoarseAggregate','FineAggregate','
             y=training$CompressiveStrength, plot='pairs')
 ```
 
-![](index_files/figure-html/unnamed-chunk-36-1.png)
+![](index_files/figure-html/unnamed-chunk-36-1.png)<!-- -->
 
 Course and fine aggregates are well correlated to strength.
 
@@ -647,7 +648,7 @@ qplot(CompressiveStrength, FlyAsh, data=training) +
     geom_smooth(method='lm', formula=y~x)
 ```
 
-![](index_files/figure-html/unnamed-chunk-37-1.png)
+![](index_files/figure-html/unnamed-chunk-37-1.png)<!-- -->
 
 No correlation between FlyAsh and strength.
 
@@ -658,7 +659,7 @@ No correlation between FlyAsh and strength.
 plot(training$CompressiveStrength, pch=19)
 ```
 
-![](index_files/figure-html/unnamed-chunk-38-1.png)
+![](index_files/figure-html/unnamed-chunk-38-1.png)<!-- -->
 
 ### Plot Training by Index, Coloring on Regressors
 
@@ -668,28 +669,28 @@ qplot(1:length(training$CompressiveStrength), training$CompressiveStrength,
             col=cut2(training$Cement), data=training)
 ```
 
-![](index_files/figure-html/unnamed-chunk-39-1.png)
+![](index_files/figure-html/unnamed-chunk-39-1.png)<!-- -->
 
 ```r
 qplot(1:length(training$CompressiveStrength), training$CompressiveStrength, 
             col=cut2(training$BlastFurnaceSlag), data=training)
 ```
 
-![](index_files/figure-html/unnamed-chunk-39-2.png)
+![](index_files/figure-html/unnamed-chunk-39-2.png)<!-- -->
 
 ```r
 qplot(1:length(training$CompressiveStrength), training$CompressiveStrength, 
             col=cut2(training$FlyAsh, g=2), data=training)
 ```
 
-![](index_files/figure-html/unnamed-chunk-39-3.png)
+![](index_files/figure-html/unnamed-chunk-39-3.png)<!-- -->
 
 ```r
 qplot(1:length(training$CompressiveStrength), training$CompressiveStrength, 
             col=cut2(training$Water), data=training)
 ```
 
-![](index_files/figure-html/unnamed-chunk-39-4.png)
+![](index_files/figure-html/unnamed-chunk-39-4.png)<!-- -->
 
 
 
@@ -698,28 +699,28 @@ qplot(1:length(training$CompressiveStrength), training$CompressiveStrength,
             col=cut2(training$Superplasticizer), data=training)
 ```
 
-![](index_files/figure-html/unnamed-chunk-40-1.png)
+![](index_files/figure-html/unnamed-chunk-40-1.png)<!-- -->
 
 ```r
 qplot(1:length(training$CompressiveStrength), training$CompressiveStrength, 
             col=cut2(training$CoarseAggregate), data=training)
 ```
 
-![](index_files/figure-html/unnamed-chunk-40-2.png)
+![](index_files/figure-html/unnamed-chunk-40-2.png)<!-- -->
 
 ```r
 qplot(1:length(training$CompressiveStrength), training$CompressiveStrength, 
             col=cut2(training$FineAggregate), data=training)
 ```
 
-![](index_files/figure-html/unnamed-chunk-40-3.png)
+![](index_files/figure-html/unnamed-chunk-40-3.png)<!-- -->
 
 ```r
 qplot(1:length(training$CompressiveStrength), training$CompressiveStrength, 
             col=cut2(training$Age), data=training)
 ```
 
-![](index_files/figure-html/unnamed-chunk-40-4.png)
+![](index_files/figure-html/unnamed-chunk-40-4.png)<!-- -->
 
 FlyAsh follows a bit the pattern of strength, but we cannot say it 'perfectly explains' the outcome vs index plot.
 
@@ -742,7 +743,7 @@ testing <- mixtures[-inTrain,]
 hist(training$Superplasticizer, xlab='super plasticizer')
 ```
 
-![](index_files/figure-html/unnamed-chunk-42-1.png)
+![](index_files/figure-html/unnamed-chunk-42-1.png)<!-- -->
 
 The variable is skewed, and several values on zero. Would applying a log transform here would make it unskewed?
 
@@ -751,7 +752,7 @@ The variable is skewed, and several values on zero. Would applying a log transfo
 hist(log10(training$Superplasticizer+1), xlab='super plasticizer log10 transformed')
 ```
 
-![](index_files/figure-html/unnamed-chunk-43-1.png)
+![](index_files/figure-html/unnamed-chunk-43-1.png)<!-- -->
 
 No. There are too many zeroes, so log transform does not unskew zero values.
 
@@ -769,7 +770,7 @@ testing <- spam[-inTrain,]
 hist(training$capitalAve, xlab='average capital run length')
 ```
 
-![](index_files/figure-html/unnamed-chunk-45-1.png)
+![](index_files/figure-html/unnamed-chunk-45-1.png)<!-- -->
 
 Absolute majority of the run length are small, but a few are much larger.
 
@@ -883,7 +884,7 @@ trainCapAveS <- predict(preObj, training[,-58])$capitalAve
 par(mfrow=c(1,2)); hist(trainCapAveS); qqnorm(trainCapAveS)
 ```
 
-![](index_files/figure-html/unnamed-chunk-52-1.png)
+![](index_files/figure-html/unnamed-chunk-52-1.png)<!-- -->
 
 you can see that there is still a large number of samples on the lower bound of the histogram, as well as the QQ plot is not entirelly linear.
 
@@ -1052,7 +1053,7 @@ plot(training$age, training$wage, pch=19, cex=0.5)
 points(training$age, predict(lm1, newdata=training), col='red', pch=19, cex=0.5)
 ```
 
-![](index_files/figure-html/unnamed-chunk-62-1.png)
+![](index_files/figure-html/unnamed-chunk-62-1.png)<!-- -->
 
 To predict on the test data set:
 
@@ -1118,7 +1119,7 @@ names(spam)[c(34,32)]
 plot(spam[,34],spam[,32])
 ```
 
-![](index_files/figure-html/unnamed-chunk-67-1.png)
+![](index_files/figure-html/unnamed-chunk-67-1.png)<!-- -->
 
 They lay on a line, so are highly correlated.
 
@@ -1131,7 +1132,7 @@ Y <- 0.71*training$num415 - 0.71*training$num857
 plot(X, Y)
 ```
 
-![](index_files/figure-html/unnamed-chunk-68-1.png)
+![](index_files/figure-html/unnamed-chunk-68-1.png)<!-- -->
 
 You could get to the same exact results by PCA:
 
@@ -1142,7 +1143,7 @@ prComp <- prcomp(smallSpam)
 plot(prComp$x[,1], prComp$x[,2])
 ```
 
-![](index_files/figure-html/unnamed-chunk-69-1.png)
+![](index_files/figure-html/unnamed-chunk-69-1.png)<!-- -->
 
 Rotation matrix shows the exact coefficients used to obtain the principal components:
 
@@ -1166,7 +1167,7 @@ prComp <- prcomp(log10(spam[,-58]+1)) # using log to make it more gaussian looki
 plot(prComp$x[,1], prComp$x[,2], col=typeColor, xlab='PC1', ylab='PC2')
 ```
 
-![](index_files/figure-html/unnamed-chunk-71-1.png)
+![](index_files/figure-html/unnamed-chunk-71-1.png)<!-- -->
 
 We can see PC1 explains a lot of spam/mospam (above a certain threshold there is change from black to red)
 
@@ -1179,7 +1180,7 @@ spamPC <- predict(preProc, log10(spam[,-58]+1))
 plot(spamPC[,1], spamPC[,2], col=typeColor)
 ```
 
-![](index_files/figure-html/unnamed-chunk-72-1.png)
+![](index_files/figure-html/unnamed-chunk-72-1.png)<!-- -->
 
 And we can use the result to train a model, say `glm`.
 
@@ -1505,7 +1506,7 @@ plot(trainFaith$waiting, trainFaith$eruptions, pch=19, col='blue', xlab='waiting
 lines(trainFaith$waiting, lm1$fitted, lwd=3)
 ```
 
-![](index_files/figure-html/unnamed-chunk-84-1.png)
+![](index_files/figure-html/unnamed-chunk-84-1.png)<!-- -->
 
 You can get to the same results using `train` with `method='lm'`:
 
@@ -1579,7 +1580,7 @@ plot(testFaith$waiting, testFaith$eruptions, pch=19, col='blue', xlab='waiting',
 lines(testFaith$waiting, predict(lm1, newdata=testFaith),lwd=3)
 ```
 
-![](index_files/figure-html/unnamed-chunk-88-1.png)
+![](index_files/figure-html/unnamed-chunk-88-1.png)<!-- -->
 
 Doesn't perfectly fit the training set, but it is a pretty good approximation for predictions on the testing set.
 
@@ -1621,7 +1622,7 @@ plot(testFaith$waiting, testFaith$eruptions, pch=19, col='blue') # test data pre
 matlines(testFaith$waiting[ord], pred1[ord,], type='l',col=c(1,2,2),lty=c(1,1,1),lwd=2)
 ```
 
-![](index_files/figure-html/unnamed-chunk-91-1.png)
+![](index_files/figure-html/unnamed-chunk-91-1.png)<!-- -->
 
 # Predicting with Regression: Multiple Covariates
 
@@ -1703,7 +1704,7 @@ finMod <- modFit$finalModel
 plot(finMod, 1, pch=19, cex=0.5, col='#00000010')
 ```
 
-![](index_files/figure-html/unnamed-chunk-95-1.png)
+![](index_files/figure-html/unnamed-chunk-95-1.png)<!-- -->
 
 Is the residuals vs fitted plot. We want to see a straight line on residuals=0 (what is not, for higher fitted values) and small number of outliers (what we are not seeing, look at the numbers on the top).
 
@@ -1716,7 +1717,7 @@ We can also color by variables not used in the original model:
 qplot(finMod$fitted, finMod$residuals, col=race, data=training)
 ```
 
-![](index_files/figure-html/unnamed-chunk-96-1.png)
+![](index_files/figure-html/unnamed-chunk-96-1.png)<!-- -->
 
 We can see that several outliers are related to race (white race), indicating that race is a potential missing regressor.
 
@@ -1729,7 +1730,7 @@ Index is just the position of a sample on the dataset.
 plot(finMod$residuals, pch=19)
 ```
 
-![](index_files/figure-html/unnamed-chunk-97-1.png)
+![](index_files/figure-html/unnamed-chunk-97-1.png)<!-- -->
 
 We can see a clear trend, residuals grow with index. Also more outliers as index grow (right side of the plot). This indicates a potential regressor is missing in our model, usually related to some time related continous variable (age, date, timestamp, etc.)
 
@@ -1744,7 +1745,7 @@ pred <- predict(modFit, testing)
 qplot(wage, pred, col=year, data=testing)
 ```
 
-![](index_files/figure-html/unnamed-chunk-98-1.png)
+![](index_files/figure-html/unnamed-chunk-98-1.png)<!-- -->
 
 You are looking for a linear, 45 degrees fitted line between predicted and truth, no outliers. You add color to find a variable that might be potentially impeding that linear relationship from occuring.
 
@@ -1781,5 +1782,89 @@ pred <- predict(modFitAll, testing)
 qplot(wage, pred, data=testing)
 ```
 
-![](index_files/figure-html/unnamed-chunk-99-1.png)
+![](index_files/figure-html/unnamed-chunk-99-1.png)<!-- -->
 
+## Example: South Africa Heart Disease Data
+
+Partitioning the data:
+
+
+```r
+library(ElemStatLearn)
+```
+
+```
+## 
+## Attaching package: 'ElemStatLearn'
+```
+
+```
+## The following object is masked _by_ '.GlobalEnv':
+## 
+##     spam
+```
+
+```r
+data(SAheart)
+set.seed(8484)
+train = sample(1:dim(SAheart)[1],size=dim(SAheart)[1]/2,replace=F)
+trainSA = SAheart[train,]
+testSA = SAheart[-train,]
+head(trainSA)
+```
+
+```
+##     sbp tobacco  ldl adiposity famhist typea obesity alcohol age chd
+## 238 176    5.76 4.89     26.10 Present    46   27.30   19.44  57   0
+## 114 174    0.00 8.46     35.10 Present    35   25.27    0.00  61   1
+## 312 174    3.50 5.26     21.97 Present    36   22.04    8.33  59   1
+## 301 166    4.10 4.00     34.30 Present    32   29.51    8.23  53   0
+## 311 130    0.05 2.44     28.25 Present    67   30.86   40.32  34   0
+## 179 128    0.04 8.22     28.17  Absent    65   26.24   11.73  24   0
+```
+
+Fitting a model:
+
+
+```r
+set.seed(13234)
+modFit <- train(chd ~ age + alcohol + obesity + tobacco + typea + ldl, 
+                method='glm', family='binomial', data=trainSA)
+```
+
+```
+## Warning in train.default(x, y, weights = w, ...): You are trying to do
+## regression and your outcome only has two possible values Are you trying to
+## do classification? If so, use a 2 level factor as your outcome column.
+```
+
+Calculating misclassification:
+
+
+```r
+missClass <- function(values,prediction){
+    sum(((prediction > 0.5)*1) != values)/length(values)
+}
+```
+
+Test set misclassification:
+
+
+```r
+missClass(testSA$chd, predict(modFit, newdata=testSA))
+```
+
+```
+## [1] 0.3116883
+```
+
+Training set misclassification:
+
+
+```r
+missClass(trainSA$chd, predict(modFit, newdata=trainSA))
+```
+
+```
+## [1] 0.2727273
+```
