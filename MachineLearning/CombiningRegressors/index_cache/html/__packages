@@ -16,3 +16,12 @@ dplyr
 timeDate
 forecast
 rpart
+survival
+gbm
+plyr
+AppliedPredictiveModeling
+MASS
+lars
+elasticnet
+lubridate
+e1071

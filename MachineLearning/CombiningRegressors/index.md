@@ -7,10 +7,11 @@ April 28, 2015
 
 ```r
 if (!require("pacman")) install.packages("pacman")
-pacman::p_load(ElemStatLearn, ISLR, ggplot2, caret, quantmod, dplyr, forecast)
+pacman::p_load(ElemStatLearn, ISLR, ggplot2, caret, quantmod, plyr, dplyr, forecast, 
+               elasticnet, lubridate, e1071)
 ```
 
-# Regulatized Regression
+# Regularized Regression
 
 ## Example: Prostate Cancer
 
@@ -154,9 +155,77 @@ lm(lpsa ~ ., data=small)
 
 For small datasets, several of the predictors are irrelevant, marked as `NA`
 
+## Example: Concrete LASSO Regression
+
+
+```r
+set.seed(3523)
+library(AppliedPredictiveModeling)
+data(concrete)
+inTrain = createDataPartition(concrete$CompressiveStrength, p = 3/4)[[1]]
+training = concrete[ inTrain,]
+testing = concrete[-inTrain,]
+```
+
+
+```r
+set.seed(233)
+mod <- train(CompressiveStrength ~ ., method='lasso', data=training)
+```
+
+Which variable is the last coefficient to be set to zero as the penalty increases? 
+
+
+```r
+library(elasticnet)
+plot.enet(mod$finalModel, xvar='penalty', use.color=TRUE)
+```
+
+![](index_files/figure-html/unnamed-chunk-8-1.png)<!-- -->
+
+The last coefficient to reach zero, the black line, is **Cement**.
+
+## Example: Concrete Strength Prediction & SVM
+
+
+```r
+set.seed(3523)
+library(AppliedPredictiveModeling)
+data(concrete)
+inTrain = createDataPartition(concrete$CompressiveStrength, p = 3/4)[[1]]
+training = concrete[ inTrain,]
+testing = concrete[-inTrain,]
+```
+
+Set the seed to 325 and fit a support vector machine to predict Compressive Strength using the default settings. Predict on the testing set. 
+
+
+```r
+library(e1071)
+set.seed(325)
+fit <- svm(CompressiveStrength ~ ., data=training)
+```
+
+What is the RMSE? 
+
+
+```r
+pred <- predict(fit, newdata=testing)
+accuracy(pred, testing$CompressiveStrength)
+```
+
+```
+##                 ME     RMSE      MAE       MPE     MAPE
+## Test set 0.1682863 6.715009 5.120835 -7.102348 19.27739
+```
+
+From the table above, **RMSE = 6.715009**
+
 # Combining Predictors
 
 Also known as ensembling, combinaion of several models.
+
+## Example: Wage Prediction
 
 Example with wage data. Create training, test and validation sets:
 
@@ -190,7 +259,7 @@ pred2 <- predict(mod2, testing)
 qplot(pred1, pred2, col=wage, data=testing)
 ```
 
-![](index_files/figure-html/unnamed-chunk-8-1.png)<!-- -->
+![](index_files/figure-html/unnamed-chunk-12-1.png)<!-- -->
 
 You can see they do not exactly agree on the prediction, and they also differ from the actual `wage` on the test data set, set in the scale of colours.
 
@@ -217,7 +286,7 @@ c(sqrt(sum((pred1 - testing$wage)^2)),
 ```
 
 ```
-## [1] 1037.137 1066.984 1024.674
+## [1] 1026.5787  798.2576 1401.2887
 ```
 
 We can see the combined prediction error is slightly lower than the individual predictions.
@@ -242,12 +311,226 @@ c(sqrt(sum((pred1V - validation$wage)^2)),
 ```
 
 ```
-## [1] 1037.137 1066.984 1024.674
+## [1] 1026.5787  798.2576  961.4797
 ```
 
 Again smaller errors on combined predictors. Even simple model blending like this brings benefits.
 
+## Example: Vowel Prediction
+
+
+```r
+library(ElemStatLearn)
+data(vowel.train)
+data(vowel.test)
+```
+
+
+```r
+vowel.train$y <- as.factor(vowel.train$y)
+vowel.test$y <- as.factor(vowel.test$y)
+```
+
+
+```r
+set.seed(33833) 
+mod1 <- train(y ~ ., data=vowel.train, method='rf')
+mod2 <- train(y ~ ., data=vowel.train, method='gbm', verbose=FALSE) # gbm() is REALLY verbose...
+```
+
+Define predictors
+
+
+```r
+pred1 <- predict(mod1, vowel.test)
+pred2 <- predict(mod2, vowel.test)
+```
+
+Plot 2 predictions, just to get a visual sense of how much they agree...
+
+
+```r
+qplot(pred1, pred2, col=y, data=vowel.test)
+```
+
+![](index_files/figure-html/unnamed-chunk-19-1.png)<!-- -->
+
+What is the accuracy of the random forest model?
+
+
+```r
+confusionMatrix(vowel.test$y, pred1)$overall['Accuracy']
+```
+
+```
+##  Accuracy 
+## 0.6125541
+```
+
+What is the accuracy of boosted trees?
+
+
+```r
+confusionMatrix(vowel.test$y, pred2)$overall['Accuracy']
+```
+
+```
+##  Accuracy 
+## 0.5367965
+```
+
+What is the agreement accuracy (i.e. accuracy among the test set samples where the two methods agree)?
+
+
+```r
+indexAgreed <- (pred1 == pred2)
+confusionMatrix(vowel.test$y[indexAgreed], pred2[indexAgreed])$overall['Accuracy']
+```
+
+```
+##  Accuracy 
+## 0.6634921
+```
+
+And the result above should be the same as... (it should be reflexive):
+
+
+```r
+indexAgreed <- (pred1 == pred2)
+confusionMatrix(vowel.test$y[indexAgreed], pred1[indexAgreed])$overall['Accuracy']
+```
+
+```
+##  Accuracy 
+## 0.6634921
+```
+
+## Example: Alzheimer Disease
+
+
+```r
+library(caret)
+library(gbm)
+set.seed(3433)
+library(AppliedPredictiveModeling)
+data(AlzheimerDisease)
+adData = data.frame(diagnosis,predictors)
+inTrain = createDataPartition(adData$diagnosis, p = 3/4)[[1]]
+training = adData[ inTrain,]
+testing = adData[-inTrain,]
+```
+
+Define predictors for random forest, boosted trees and linear discriminant analysis:
+
+
+```r
+set.seed(62433)
+rf.fit <- train(diagnosis ~ ., data=training, method='rf')
+gbm.fit <- train(diagnosis ~ ., data=training, method='gbm', verbose=FALSE)
+lda.fit <- train(diagnosis ~ ., data=training, method='lda')
+```
+
+Predict on testing data set for each model:
+
+
+```r
+rf.pred <- predict(rf.fit, testing)
+gbm.pred <- predict(gbm.fit, testing)
+lda.pred <- predict(lda.fit, testing)
+```
+
+```
+## Loading required package: MASS
+```
+
+```
+## 
+## Attaching package: 'MASS'
+```
+
+```
+## The following object is masked from 'package:dplyr':
+## 
+##     select
+```
+
+Combined data frame for a stacked analysis
+
+
+```r
+stacked.df <- data.frame(rf.pred, gbm.pred, lda.pred, diagnosis=testing$diagnosis)
+```
+
+Stacked model based on random forests:
+
+
+```r
+stacked.fit <- train(diagnosis ~ ., method='rf', data=stacked.df)
+```
+
+```
+## note: only 2 unique complexity parameters in default grid. Truncating the grid to 2 .
+```
+
+Predict testing data set based on the stacked model:
+
+
+```r
+stacked.pred <- predict(stacked.fit, testing)
+```
+
+What is the accuracy of the random forest model?
+
+
+```r
+confusionMatrix(testing$diagnosis, rf.pred)$overall['Accuracy']
+```
+
+```
+##  Accuracy 
+## 0.7682927
+```
+
+What is the accuracy of linear discriminant analysis?
+
+
+```r
+confusionMatrix(testing$diagnosis, lda.pred)$overall['Accuracy']
+```
+
+```
+##  Accuracy 
+## 0.7682927
+```
+
+What is the accuracy of boosted trees?
+
+
+```r
+confusionMatrix(testing$diagnosis, gbm.pred)$overall['Accuracy']
+```
+
+```
+##  Accuracy 
+## 0.7926829
+```
+
+What is the accuracy of the stacked model?
+
+
+```r
+confusionMatrix(testing$diagnosis, stacked.pred)$overall['Accuracy']
+```
+
+```
+## Accuracy 
+## 0.804878
+```
+
+
 # Forecasting
+
+## Example: Financial Data
 
 
 ```r
@@ -347,7 +630,7 @@ ts1 <- ts(googOpen, frequency=12)
 plot(ts1, xlab='year+1', ylab='GOOG')
 ```
 
-![](index_files/figure-html/unnamed-chunk-17-1.png)<!-- -->
+![](index_files/figure-html/unnamed-chunk-36-1.png)<!-- -->
 
 Decompose a time series into patterns:
 
@@ -360,7 +643,7 @@ Decompose a time series into patterns:
 plot(decompose(ts1), xlab='years+1')
 ```
 
-![](index_files/figure-html/unnamed-chunk-18-1.png)<!-- -->
+![](index_files/figure-html/unnamed-chunk-37-1.png)<!-- -->
 
 We can clearly see:
 
@@ -391,7 +674,9 @@ ts1Train
 ## 5
 ```
 
-Exponential smooting: we can smooth the time series with `ets` and forecast future points with `forecast`.
+## Exponential Smoothing
+
+We can smooth the time series with `ets` and forecast future points with `forecast`.
 
 
 ```r
@@ -402,7 +687,7 @@ plot(fcast)
 lines(ts1Test, col='red')
 ```
 
-![](index_files/figure-html/unnamed-chunk-20-1.png)<!-- -->
+![](index_files/figure-html/unnamed-chunk-39-1.png)<!-- -->
 
 In red, the test set (remember, for timeseries they are taken in contiguous windows), in blue the predicted forecast and the bounds of confidence (shades of grey).
 
@@ -421,6 +706,69 @@ accuracy(fcast, ts1Test)
 ## Training set 0.3761101 0.0592420        NA
 ## Test set     1.3981341 0.7452128  3.449667
 ```
+
+## Example: Site Visits
+
+
+```r
+library(lubridate) # For year() function below
+temporaryFile <- tempfile()
+url <- 'https://d396qusza40orc.cloudfront.net/predmachlearn/gaData.csv'
+download.file(url, destfile=temporaryFile, method="curl")
+dat = read.csv(temporaryFile)
+```
+
+
+```r
+training = dat[year(dat$date) < 2012,]
+testing = dat[(year(dat$date)) > 2011,]
+tstrain = ts(training$visitsTumblr)
+```
+
+Training with a `bats` function: BATS model (Exponential smoothing state space model with Box-Cox transformation, ARMA errors, Trend and Seasonal components)
+
+
+```r
+mod <- bats(tstrain)
+```
+
+Forecast:
+
+
+```r
+fcast95 <- forecast.bats(mod, h=nrow(testing), level=95) # 95% prediction interval
+```
+
+For how many of the testing points is the true value within the 95% prediction interval bounds?
+
+
+```r
+withinRangeCount <- 0
+for (i in 1:nrow(testing)) {
+    trueValue <- testing$visitsTumblr[i]
+    if (fcast95$lower[i] < trueValue & trueValue < fcast95$upper[i]) {
+        withinRangeCount <- withinRangeCount + 1
+    }
+}
+withinRangeCount
+```
+
+```
+## [1] 226
+```
+
+And what is the percentage in relation to testing sample count?
+
+
+```r
+withinRangeCount/nrow(testing)
+```
+
+```
+## [1] 0.9617021
+```
+
+i.e. approx **96.17%**
 
 # Unsupervised Prediction
 
@@ -451,7 +799,7 @@ training$clusters <- as.factor(kmeans1$cluster)
 qplot(Petal.Width, Petal.Length, col=clusters, data=training)
 ```
 
-![](index_files/figure-html/unnamed-chunk-23-1.png)<!-- -->
+![](index_files/figure-html/unnamed-chunk-46-1.png)<!-- -->
 
 How do clusters compare to real labels of species?
 
@@ -517,4 +865,6 @@ table(testClusterPred, testing$Species)
 ##               2      0          0         7
 ##               3     15          0         0
 ```
+
+You can also use `cp_predict` in the `clue` package for similar work.
 

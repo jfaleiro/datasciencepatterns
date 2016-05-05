@@ -349,9 +349,13 @@ modFit <- randomForest(y ~ ., data=vowel.train)
 varImp(modFit)
 ```
 
+We care about the order:
+
 ```{r}
 order(varImp(modFit), decreasing = TRUE)
 ```
+
+
 # Boosting
 
 Using boosting in our Wage example
