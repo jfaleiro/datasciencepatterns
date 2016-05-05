@@ -42,13 +42,19 @@ Sample Report [(Browse the Code)](https://github.com/jfaleiro/carbonfootprint)
 * [Predicting the Carbon Footprint of Automobiles Through Regression Models](https://github.com/jfaleiro/automobilecarbonfootprint/blob/master/PredictingAutomobileConsumption.pdf)
 
 Machine Learning
------------------
+----------------
 
-[Prediction, Errors and Cross Validation](https://cdn.rawgit.com/jfaleiro/datasciencepatterns/master/MachineLearning/Prediction/index.html)
+Annotations and patterns related to machine learning came out to be very long, so we divided them further into 4 groups:
 
-[The Caret Package](https://cdn.rawgit.com/jfaleiro/datasciencepatterns/master/MachineLearning/CaretPackage/index.html)
+* [Prediction, Errors and Cross Validation](https://cdn.rawgit.com/jfaleiro/datasciencepatterns/master/MachineLearning/Prediction/index.html)
 
-[Prediction Algorithms](https://cdn.rawgit.com/jfaleiro/datasciencepatterns/master/MachineLearning/Algorithms/index.html)
+* [The Caret Package](https://cdn.rawgit.com/jfaleiro/datasciencepatterns/master/MachineLearning/CaretPackage/index.html)
+
+* [Prediction Algorithms](https://cdn.rawgit.com/jfaleiro/datasciencepatterns/master/MachineLearning/Algorithms/index.html)
+
+* [Regularized Regression and Combining Predictors](https://cdn.rawgit.com/jfaleiro/datasciencepatterns/master/MachineLearning/CombiningRegressors/index.html)
+
+
 
 Annotations on tools and techniques for understanding, building, and testing prediction functions. Common tasks performed by data scientists and data analysts in prediction and machine learning. Basic grounding concepts related to selection of training and tests sets, overfitting, and error rates. A wide range of model based and algorithmic machine learning methods including regression, classification trees, Naive Bayes, and random forests. The complete process of building prediction functions including data collection, feature creation, algorithms, and evaluation.
 
