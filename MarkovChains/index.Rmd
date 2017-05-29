@@ -1,0 +1,248 @@
+---
+title: "Markov Chains: Predictive Model for Next Typed Word"
+author: "J Faleiro"
+date: "July 15, 2016"
+output: 
+    html_document:
+        keep_md: true
+        toc: true
+        theme: united
+---
+
+## Understanding the Problem and Getting the Data
+
+# Required libraries
+
+```{r, warning=FALSE, message=FALSE}
+if (!require("pacman")) install.packages("pacman")
+pacman::p_load(ngram, ggplot2, gridExtra, caret, feather)
+```
+
+Downloading the data
+
+```{r download, cache=TRUE}
+url <- 'https://d396qusza40orc.cloudfront.net/dsscapstone/dataset/Coursera-SwiftKey.zip'
+file <- 'training.zip'
+download.file(url, destfile=file, method='curl')
+unzip(file)
+```
+
+Size in Mb of blogs?
+
+```{r}
+system('ls -lh final/en_US/en_US.blogs.txt', intern=TRUE)
+```
+
+How many lines in each of the en_US dataset?
+
+```{r descriptions, cache=TRUE, dependson='unzip'}
+files <- list.files(recursive=TRUE, pattern='en_US.*.txt')
+descriptions <- sapply(files, function(f) {
+    print(f)
+    sizeMb <- file.info(f)[1]/1024/1024
+    lines <- readLines(f)
+    maxLineLength <- which.max(lapply(lines, nchar))
+    wordCount <- sum(sapply(strsplit(lines, '\\s+'), length))
+    c(name=f, sizeMB=sizeMb, lines=length(lines), maxLineLength=maxLineLength, words=wordCount)
+})
+```
+
+```{r}
+descriptions
+```
+
+```{r}
+df <- data.frame(descriptions)
+df
+```
+
+Reading twitter US:
+
+```{r read.twitter.us, cache=TRUE, dependson='download'}
+twitter <- readLines('final/en_US/en_US.twitter.txt')
+```
+
+What is rate of love to hate mentions in twitter?
+
+```{r love.hate.ratio, cache=TRUE, dependson='read.twitter.us'}
+loveCount <- length(grep('love', twitter))
+hateCount <- length(grep('hate', twitter))
+loveCount / hateCount
+```
+
+Where is the word 'biostat' mentioned in twitter?
+
+```{r biostat, cache=TRUE, dependson='read.twitter.us'}
+twitter[grep('biostat', twitter)]
+```
+
+How many times a specific sentence is mentioned in twitter?
+
+```{r computer.beat, cache=TRUE, dependson='read.twitter.us'}
+length(grep('A computer once beat me at chess, but it was no match for me at kickboxing', twitter))
+```
+
+Read all blogs in US english:
+
+```{r read.blogs.us, cache=TRUE, dependson='unzip'}
+blogs <- readLines('final/en_US/en_US.blogs.txt')
+```
+
+Read all news in US english:
+
+```{r read.news.us, cache=TRUE, dependson='unzip'}
+news <- readLines('final/en_US/en_US.news.txt')
+```
+
+What are the longest lines in chars in each of the feeds?
+
+```{r sizes, cache=TRUE, dependson='read.twitter.us,read.blogs.us,read.news.us'}
+which.max(lapply(twitter, nchar))
+which.max(lapply(blogs, nchar))
+which.max(lapply(news, nchar))
+```
+
+## Using the Data
+
+Random sample news data by 10%:
+
+```{r small.news, cache=TRUE, dependson='read.news.us'}
+length(news)
+set.seed(123)
+smallNews <- sample(news, size=length(news)*0.10)
+length(smallNews)
+```
+
+```{r small.blogs, cache=TRUE, dependson='read.blogs.us'}
+length(blogs)
+set.seed(123)
+smallBlogs <- sample(news, size=length(blogs)*0.10)
+length(smallBlogs)
+```
+
+```{r small.twitter, cache=TRUE, dependson='read.twitter.us'}
+length(twitter)
+set.seed(123)
+smallTwitter <- sample(news, size=length(twitter)*0.10)
+length(smallTwitter)
+```
+
+Creating n-grams - good explanation at https://lagunita.stanford.edu/c4x/Engineering/CS-224N/asset/slp4.pdf
+
+```{r ngrams.us, cache=TRUE, dependson='small.news,small.blogs,small.twitter'}
+nw <- paste0(paste(smallNews, collapse='/n'),
+             paste(smallBlogs, collapse='/n'),
+             paste(smallTwitter, collapse='/n')
+)
+nw1 <- ngram(nw, n=1)
+nw2 <- ngram(nw, n=2)
+nw3 <- ngram(nw, n=3)
+nw4 <- ngram(nw, n=4)
+nw.pt.1 <- get.phrasetable(nw1)
+nw.pt.2 <- get.phrasetable(nw2)
+nw.pt.3 <- get.phrasetable(nw3)
+nw.pt.4 <- get.phrasetable(nw4)
+```
+
+```{r saves.ngrams.us.feather, cache=TRUE, dependson='ngrams.us'}
+write_feather(nw.pt.1, 'ngrams-1.feather')
+write_feather(nw.pt.2, 'ngrams-2.feather')
+write_feather(nw.pt.3, 'ngrams-3.feather')
+write_feather(nw.pt.4, 'ngrams-4.feather')
+```
+
+```{r saves.ngrams.us.rds, cache=TRUE, dependson='ngrams.us'}
+saveRDS(nw.pt.1, 'ngrams-1.rds')
+saveRDS(nw.pt.2, 'ngrams-2.rds')
+saveRDS(nw.pt.3, 'ngrams-3.rds')
+saveRDS(nw.pt.4, 'ngrams-4.rds')
+```
+
+```{r shows.ngrams.news.us, cache=TRUE, dependson='ngrams.us'}
+nrow(nw.pt.1)
+nrow(nw.pt.2)
+nrow(nw.pt.3)
+nrow(nw.pt.4)
+grid.arrange(tableGrob(head(nw.pt.1)), 
+             tableGrob(head(nw.pt.2)), 
+             tableGrob(head(nw.pt.3)),
+             tableGrob(head(nw.pt.4)),
+             ncol=2)
+```
+
+## Predicting Words
+
+```{r echo=FALSE}
+# R and its weirdness... somehow this thing is coercing a dataframe to a list... 
+# here is now you deal with it... part 1, use a list
+dfs <- list(nw.pt.1, nw.pt.2, nw.pt.3, nw.pt.4)
+predictNextWord <- function(sentence, prefix, top=5) {
+    lastNWords <- function(s, n) {
+        paste(tail(strsplit(sentence, split=' ')[[1]], n), collapse=' ')
+    }
+    sentence <- gsub('\\s+', ' ', sentence)
+    words <- wordcount(sentence)
+    dfsIndex <- min(words+1, length(dfs))
+    df <- dfs[[dfsIndex]] # weirdness part 2, use [[]]...
+    relevantSentence <- lastNWords(sentence, dfsIndex-1) 
+    if (prefix != '' && relevantSentence == '') {
+        re <- paste0('^', prefix)
+    } else if (prefix != '' && relevantSentence != '') {
+        re <- paste(paste0('^', relevantSentence), prefix)
+    } else if (prefix == '' && relevantSentence != '') {
+        re <- paste0('^', relevantSentence, ' ')
+    } else { # prefix == '' && relevantSentence == ''
+        re <- '^'
+    }
+    print(paste('re=',re))
+    result <- head(df[grep(re, df$ngrams),], top)
+    print(paste('nrow=',nrow(result)))
+    if (nrow(result) < top & words > 0) {
+        # back track with (n-1)-gram for alternative using recursion
+        backTrackSentence <- lastNWords(relevantSentence, wordcount(relevantSentence) - 1)
+        backTrackResults <- predictNextWord(backTrackSentence, prefix, top)
+        result <- head(rbind(result, backTrackResults), top)
+    }
+    result
+}
+```
+
+```{r}
+p <- predictNextWord('I','th')
+ggplot(p, aes(x=ngrams, y=prop)) +
+    theme_light() +
+    geom_bar(stat='identity')
+# hack to order X by value of Y
+p$ngrams <- factor(p$ngrams, levels=p$ngrams[order(-p$prop)])
+ggplot(p, aes(x=ngrams, y=prop)) +
+    theme_light() +
+    geom_bar(stat='identity') +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1),
+          axis.title.x = element_blank(),
+          axis.title.y = element_blank())
+```
+
+```{r}
+sapply(c(1,23), function(x) {x+1})
+predictNextWord('','')
+predictNextWord('','the')
+predictNextWord('I','')
+predictNextWord('I','th')
+predictNextWord('I will', '')
+predictNextWord('I   \twill', '')
+predictNextWord('I   will', 'pr')
+```
+
+```{r}
+predictNextWord('The guy in front of me just bought a pound of bacon, a bouquet, and a case of', '')
+predictNextWord("You're the reason why I smile everyday. Can you follow me please? It would mean the", '')
+```
+
+```{r}
+sentences <- list(
+    c('The guy in front of me just bought a pound of bacon, a bouquet, and a case of', ''),
+    c("You're the reason why I smile everyday. Can you follow me please? It would mean the", '')
+)
+results <- sapply(sentences, function(x) {predictNextWord(x[1], x[2])[[1]]})
+results
+```

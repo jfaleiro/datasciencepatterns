@@ -3,3 +3,11 @@
 .RData
 .Ruserdata
 .DS_Store
+README.html
+final
+index.html
+index_cache
+index_files
+ngrams-*.feather
+ngrams-*.rds
+training.zip
